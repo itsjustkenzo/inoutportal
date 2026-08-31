@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { TOKEN_KEY } from '../api/client.js';
+import { API_BASE, TOKEN_KEY } from '../api/client.js';
 import { useAuth } from './AuthContext.jsx';
 
 const LiveContext = createContext(null);
@@ -69,7 +69,9 @@ export function LiveProvider({ children }) {
       setStatus(attempt === 0 ? 'connecting' : 'offline');
 
       try {
-        const res = await fetch('/api/events', {
+        // Same base as every other call, so a separately hosted frontend keeps
+        // the stream and the REST calls pointed at one API.
+        const res = await fetch(`${API_BASE}/events`, {
           headers: { Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}` },
           signal: controller.signal,
         });

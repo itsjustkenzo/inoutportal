@@ -1,6 +1,20 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api' });
+/**
+ * Where the API lives.
+ *
+ * Left unset, requests go to /api on whatever origin served the page. That is
+ * how this runs in development (Vite proxies /api to the API) and when the API
+ * serves the built client itself, and it needs no configuration at all.
+ *
+ * Setting VITE_API_URL at build time points requests at an API on a different
+ * origin, which is what a separately hosted frontend needs. Baked in at build
+ * time, not read at runtime — that is how Vite env vars work — so changing it
+ * means rebuilding.
+ */
+export const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+
+const api = axios.create({ baseURL: API_BASE });
 
 export const TOKEN_KEY = 'inout.token';
 

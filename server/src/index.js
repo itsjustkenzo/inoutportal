@@ -28,7 +28,29 @@ const PORT = process.env.PORT || 5000;
  */
 if (process.env.TRUST_PROXY !== 'false') app.set('trust proxy', 1);
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }));
+/*
+ * A frontend hosted elsewhere calls this API cross-origin, so its address has to
+ * be named explicitly. CLIENT_ORIGIN takes a comma-separated list, which is what
+ * lets a production URL and a preview URL both be allowed.
+ *
+ * An unlisted origin gets no CORS header rather than an error: the browser then
+ * blocks it as a CORS failure, which is what a developer expects to see, instead
+ * of a 500 that looks like the API is broken.
+ */
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((s) => s.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      // No Origin header at all: a same-origin page, curl, or a health check.
+      cb(null, !origin || allowedOrigins.includes(origin));
+    },
+    credentials: true,
+  })
+);
 /*
  * Mounted before express.json: an import arrives as a raw body, and the JSON
  * parser would otherwise consume it (and reject anything over its 100kb cap).
