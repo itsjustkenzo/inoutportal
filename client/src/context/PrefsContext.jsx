@@ -135,8 +135,21 @@ export function PrefsProvider({ children }) {
     }
   }, []);
 
-  // Reloads whenever the signed-in account changes, so switching users swaps
-  // the whole look rather than carrying the previous person's over.
+  // Lets the effects below read the current account without listing `user` as a
+  // dependency — saving a preference replaces that object, and re-running on it
+  // is what used to reload the media.
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  /*
+   * Media reloads when the signed-in account changes, so switching users swaps
+   * the whole look rather than carrying the previous person's over.
+   *
+   * Keyed on the account id alone, deliberately. Depending on the whole `user`
+   * object meant every saved preference re-ran this — and it blanks the
+   * wallpaper before re-fetching it, so dragging the dimming slider made the
+   * background disappear and fade back in on every step.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -144,26 +157,7 @@ export function PrefsProvider({ children }) {
     swapUrl('avatar', null, setAvatarUrl);
     swapUrl('wallpaper', null, setWallpaperUrl);
 
-    if (!uid) {
-      setAccentState('white');
-      setDimState(DEFAULT_DIM);
-      return undefined;
-    }
-
-    /*
-     * Accent and dimming ride along on the user record — except for audit,
-     * which is pinned to green. That role has no theme picker, so a stored
-     * value could only have come from before the account became audit, and it
-     * would leave the finance report looking like a different product.
-     */
-    setAccentState(
-      user?.role === 'audit'
-        ? 'green'
-        : ACCENT_IDS.includes(user?.prefs?.accent) ? user.prefs.accent : 'white'
-    );
-    setDimState(
-      Number.isFinite(user?.prefs?.dim) ? Math.min(100, Math.max(0, user.prefs.dim)) : DEFAULT_DIM
-    );
+    if (!uid) return undefined;
 
     (async () => {
       // Hand anything left in this browser to the account, once.
@@ -178,7 +172,39 @@ export function PrefsProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [uid, user, swapUrl, fetchMedia]);
+  }, [uid, swapUrl, fetchMedia]);
+
+  /*
+   * Accent and dimming ride along on the user record, and are seeded per
+   * account — except for audit, which is pinned to green. That role has no
+   * theme picker, so a stored value could only have come from before the
+   * account became audit, and it would leave the finance report looking like a
+   * different product.
+   *
+   * Seeding only on a change of account keeps local state authoritative while
+   * someone is dragging the slider: the save echoes the value back, and
+   * re-applying it mid-drag would fight whatever they had moved on to.
+   */
+  useEffect(() => {
+    const current = userRef.current;
+
+    if (!uid) {
+      setAccentState('white');
+      setDimState(DEFAULT_DIM);
+      return;
+    }
+
+    setAccentState(
+      current?.role === 'audit'
+        ? 'green'
+        : ACCENT_IDS.includes(current?.prefs?.accent) ? current.prefs.accent : 'white'
+    );
+    setDimState(
+      Number.isFinite(current?.prefs?.dim)
+        ? Math.min(100, Math.max(0, current.prefs.dim))
+        : DEFAULT_DIM
+    );
+  }, [uid]);
 
   useEffect(() => {
     document.documentElement.dataset.accent = accent;
@@ -246,14 +272,26 @@ export function PrefsProvider({ children }) {
     [savePrefs]
   );
 
+  /*
+   * The slider reports every step of a drag, so the new value is applied at once
+   * but only written once the drag settles. Saving on each step sent a request
+   * per pixel of travel, and the account is only worth one.
+   */
+  const dimSave = useRef(null);
+
   const setDim = useCallback(
     (next) => {
       const clamped = Math.min(100, Math.max(0, Math.round(Number(next) || 0)));
       setDimState(clamped);
-      savePrefs({ dim: clamped });
+
+      clearTimeout(dimSave.current);
+      dimSave.current = setTimeout(() => savePrefs({ dim: clamped }), 350);
     },
     [savePrefs]
   );
+
+  // A drag still in flight when the page changes should not fire afterwards.
+  useEffect(() => () => clearTimeout(dimSave.current), []);
 
   const value = useMemo(
     () => ({ avatar, setAvatar, wallpaper, setWallpaper, accent, setAccent, dim, setDim }),
