@@ -1696,6 +1696,59 @@ a.sort-select:hover { border-color: var(--blue); color: var(--blue-deep); }
 .table-select-chevron svg { width: 12px; height: 12px; stroke: var(--text-muted); }
 
 .password-dots { font-family: 'IBM Plex Mono', monospace; font-size: 14px; letter-spacing: 2px; color: var(--text-muted); }
+
+/* --- Setting a password by hand, beside the random-reset lock --- */
+
+.password-cell { display: flex; align-items: center; gap: 10px; }
+
+.password-edit { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+
+/* The reveal toggle sits inside the field rather than after it, so the row
+   keeps its width whether the password is hidden or shown. */
+.password-field { position: relative; flex: 1; min-width: 150px; }
+
+.password-field .form-input.compact {
+  width: 100%;
+  padding: 7px 34px 7px 10px;
+  font-size: 12.5px;
+  border-radius: 9px;
+}
+
+.password-reveal.small {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.password-reveal.small svg { width: 15px; height: 15px; }
+
+.pw-btn {
+  flex-shrink: 0;
+  padding: 7px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 9px;
+  background: var(--panel-alt);
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.pw-btn:hover:not(:disabled) { color: var(--dash-text); border-color: var(--blue); }
+
+.pw-btn.save { border-color: var(--blue); background: var(--blue-tint); color: var(--blue-deep); }
+.pw-btn.save:hover:not(:disabled) { background: var(--blue); color: #fff; }
+
+/* Too short to submit reads as inert rather than broken. */
+.pw-btn:disabled { opacity: 0.4; cursor: default; }
+
 .actions-cell { display: flex; gap: 8px; justify-content: flex-end; }
 
 .icon-action-btn {

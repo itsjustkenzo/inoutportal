@@ -9,6 +9,7 @@ import { DEFAULT_REGION } from '../data/regions.js';
 import { MIN_PASSWORD_LENGTH } from '../constants.js';
 import { formatDate, formatRelative } from '../utils/time.js';
 import UserAvatar from '../components/UserAvatar.jsx';
+import PasswordCell from '../components/PasswordCell.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -466,7 +467,13 @@ export default function ModeratorManagement() {
                         onChange={(region) => patchMod(m.id, { region }, `${m.name} moved to ${region}.`)}
                       />
                     </td>
-                    <td><span className="password-dots">••••••••</span></td>
+                    <td>
+                      <PasswordCell
+                        mod={m}
+                        onSaved={(text) => setMessage({ type: 'success', text })}
+                        onError={(text) => setMessage({ type: 'error', text })}
+                      />
+                    </td>
                     <td className="status-col-cell">
                       <div className="actions-cell">
                         <button

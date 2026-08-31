@@ -106,21 +106,36 @@ export const resetUserPassword = asyncHandler(async (req, res) => {
     return res.status(403).json({ message: 'Only a server manager can manage this account' });
   }
 
-  const temp = generatePassword();
+  /*
+   * A password in the body is one the admin typed; without one, a random
+   * temporary is generated as before. Both paths share this endpoint so there
+   * is a single place that sets someone else's password, and a single audit
+   * line describing it.
+   */
+  const supplied = String(req.body?.password ?? '').trim();
+  const chosen = supplied.length > 0;
+  const temp = chosen ? supplied : generatePassword();
+
+  if (temp.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ message: PASSWORD_RULE });
+  }
+
   user.password = temp;
   await user.save();
 
   await record(req, {
     category: 'security',
-    action: 'user.password_reset',
+    action: chosen ? 'user.password_set' : 'user.password_reset',
     targetType: 'user',
     target: user._id,
     targetName: user.name,
     targetRole: user.role,
-    summary: `reset the password for @${user.username}`,
+    summary: `${chosen ? 'set a new password' : 'reset the password'} for @${user.username}`,
   });
 
-  res.json({ user: publicUser(user), tempPassword: temp });
+  // Only a generated password is handed back — one the admin typed is already
+  // in their hands, and echoing it would put it in another response for no gain.
+  res.json({ user: publicUser(user), tempPassword: chosen ? null : temp });
 });
 
 /** Admin: remove an account along with its attendance and stored media. */
