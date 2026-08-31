@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -18,6 +20,13 @@ import dbImportRoutes from './routes/dbimport.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+/*
+ * Hosts like Render terminate TLS at a proxy and pass the caller on in
+ * X-Forwarded-For. Without this the login rate limiter would see the proxy's
+ * address for everyone — one person hitting the limit would lock out the rest.
+ */
+if (process.env.TRUST_PROXY !== 'false') app.set('trust proxy', 1);
 
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }));
 /*
@@ -40,6 +49,28 @@ app.use('/api/schedules', scheduleRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/server-health', healthRoutes);
 app.use('/api/events', eventRoutes);
+
+/*
+ * In a deployed build this same server hands out the compiled client, so the
+ * browser calls /api on its own origin. That is what the client expects — it
+ * uses a relative baseURL, and the live event stream does too — and it means
+ * there is no cross-origin hop to configure for either.
+ *
+ * Skipped when client/dist is absent, which is the case in development: there
+ * Vite serves the client on :5173 and proxies /api here.
+ */
+const clientDist = fileURLToPath(new URL('../../client/dist/', import.meta.url));
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+
+  // Every other GET is a client-side route, so React Router gets index.html and
+  // works it out. Anything under /api falls through to notFound instead, so a
+  // mistyped endpoint still answers JSON rather than a page.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
+    res.sendFile(fileURLToPath(new URL('../../client/dist/index.html', import.meta.url)));
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);

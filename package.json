@@ -9,6 +9,7 @@
     "server": "npm --prefix server run dev",
     "client": "npm --prefix client run dev",
     "build": "npm --prefix client run build",
+    "render-build": "npm run install:all && npm --prefix client run build",
     "demo:add": "npm --prefix server run demo:add",
     "demo:clear": "npm --prefix server run demo:clear",
     "start": "npm --prefix server start"
