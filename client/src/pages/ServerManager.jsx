@@ -10,6 +10,7 @@ import { DEFAULT_REGION } from '../data/regions.js';
 import { MIN_PASSWORD_LENGTH } from '../constants.js';
 import { formatDate, formatDateTime, formatDuration } from '../utils/time.js';
 import UserAvatar from '../components/UserAvatar.jsx';
+import PasswordCell from '../components/PasswordCell.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -1355,12 +1356,13 @@ export default function ServerManager() {
                   <th>Role</th>
                   <th>Access</th>
                   <th>Added</th>
+                  <th>Password</th>
                   <th className="num">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={6} className="activity-empty">No accounts match.</td></tr>
+                  <tr><td colSpan={7} className="activity-empty">No accounts match.</td></tr>
                 )}
                 {pageOf(rows, page).map((u) => (
                   <tr key={u.id}>
@@ -1413,6 +1415,13 @@ export default function ServerManager() {
                       </button>
                     </td>
                     <td className="mono">{u.createdAt ? formatDate(u.createdAt) : '——'}</td>
+                    <td>
+                      <PasswordCell
+                        mod={u}
+                        onSaved={(text) => setMessage({ type: 'success', text })}
+                        onError={(text) => setMessage({ type: 'error', text })}
+                      />
+                    </td>
                     <td className="status-col-cell">
                       <div className="actions-cell">
                         <button
@@ -1441,7 +1450,7 @@ export default function ServerManager() {
 
                 <FillerRows
                   count={fillerCount(PAGE_SIZE, pageOf(rows, page).length)}
-                  colSpan={6}
+                  colSpan={7}
                   tall
                 />
               </tbody>
