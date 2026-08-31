@@ -3,6 +3,7 @@ import api, { errorMessage } from '../api/client.js';
 import DashLayout from '../components/DashLayout.jsx';
 import Pager from '../components/Pager.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
+import RemarkCell from '../components/RemarkCell.jsx';
 import FillerRows, { fillerCount } from '../components/FillerRows.jsx';
 import { formatClock, formatDate, formatDuration, toDateInput } from '../utils/time.js';
 import {
@@ -89,6 +90,26 @@ export default function TeamReport() {
   const [busyExport, setBusyExport] = useState(null);
 
   const range = useMemo(() => periodRange(period, sel), [period, sel]);
+
+  // A remark is written against one day, so the column only appears when the
+  // report is showing one.
+  const isDaily = period === 'daily';
+  const colCount = isDaily ? 4 : 3;
+
+  // userId -> remark text, for the selected day.
+  const [remarks, setRemarks] = useState({});
+
+  useEffect(() => {
+    if (!isDaily) return;
+    api
+      .get('/remarks', { params: { date: sel.date } })
+      .then(({ data }) => {
+        setRemarks(Object.fromEntries(data.remarks.map((r) => [String(r.user), r.text])));
+      })
+      // The hours are the point of this table; a failed note fetch must not
+      // stop them rendering.
+      .catch(() => setRemarks({}));
+  }, [isDaily, sel.date]);
 
   const dateInput = useRef(null);
 
@@ -426,6 +447,9 @@ export default function TeamReport() {
                 <tr>
                   <th>Moderator</th>
                   <th>Total hours</th>
+                  {/* A remark belongs to a single day, so the column only makes
+                      sense while a single day is being shown. */}
+                  {isDaily && <th className="remark-col">Remarks</th>}
                   {/* Dropped when printing: buttons are no use on paper. This is
                       the team-wide print only — the per-person report is a
                       separate document and is untouched. */}
@@ -434,7 +458,7 @@ export default function TeamReport() {
               </thead>
               <tbody>
                 {filteredContribution.length === 0 && (
-                  <tr><td colSpan={3} className="activity-empty">No completed shifts in {range.label}.</td></tr>
+                  <tr><td colSpan={colCount} className="activity-empty">No completed shifts in {range.label}.</td></tr>
                 )}
                 {pageOf(filteredContribution, contributionPage).map((r) => (
                   <tr key={r.userId}>
@@ -455,6 +479,17 @@ export default function TeamReport() {
                         </span>
                       </div>
                     </td>
+                    {isDaily && (
+                      <td className="remark-cell">
+                        <RemarkCell
+                          userId={r.userId}
+                          date={sel.date}
+                          value={remarks[r.userId]}
+                          onSaved={(userId, text) => setRemarks((prev) => ({ ...prev, [userId]: text }))}
+                          onError={setError}
+                        />
+                      </td>
+                    )}
                     <td className="status-col-cell no-print">
                       <div className="actions-cell">
                         <button
@@ -490,7 +525,7 @@ export default function TeamReport() {
 
                 <FillerRows
                   count={fillerCount(PAGE_SIZE, pageOf(filteredContribution, contributionPage).length)}
-                  colSpan={3}
+                  colSpan={colCount}
                   tall
                 />
               </tbody>

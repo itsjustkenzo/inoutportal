@@ -3,6 +3,7 @@ import User, { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '../models/User.js';
 import Entry from '../models/Entry.js';
 import Media from '../models/Media.js';
 import Schedule from '../models/Schedule.js';
+import Remark from '../models/Remark.js';
 import { asyncHandler } from '../middleware/error.js';
 import { publicUser } from './auth.controller.js';
 import { canManageAccount } from '../middleware/auth.js';
@@ -141,6 +142,7 @@ export const deleteUser = asyncHandler(async (req, res) => {
     Entry.deleteMany({ user: user._id }),
     Media.deleteMany({ user: user._id }),
     Schedule.deleteMany({ user: user._id }),
+    Remark.deleteMany({ user: user._id }),
   ]);
   await user.deleteOne();
 

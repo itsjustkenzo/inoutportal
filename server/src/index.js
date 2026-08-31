@@ -16,6 +16,7 @@ import scheduleRoutes from './routes/schedule.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import healthRoutes from './routes/health.routes.js';
 import eventRoutes from './routes/events.routes.js';
+import remarkRoutes from './routes/remark.routes.js';
 import dbImportRoutes from './routes/dbimport.routes.js';
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/api/schedules', scheduleRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/server-health', healthRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/remarks', remarkRoutes);
 
 /*
  * In a deployed build this same server hands out the compiled client, so the

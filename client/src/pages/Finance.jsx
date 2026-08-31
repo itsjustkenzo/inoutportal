@@ -11,6 +11,7 @@ import {
 } from '../utils/dailyReport.js';
 import { formatDate, formatDuration, toDateInput } from '../utils/time.js';
 import UserAvatar from '../components/UserAvatar.jsx';
+import RemarkCell from '../components/RemarkCell.jsx';
 
 const PAGE_SIZE = 10;
 const PERIODS = ['daily', 'monthly', 'yearly'];
@@ -68,6 +69,26 @@ export default function Finance() {
   const [busyExport, setBusyExport] = useState(null);
 
   const range = useMemo(() => periodRange(period, sel), [period, sel]);
+
+  // A remark is written against one day, so the column only appears when the
+  // report is showing one.
+  const isDaily = period === 'daily';
+  const colCount = isDaily ? 6 : 5;
+
+  // userId -> remark text, for the selected day.
+  const [remarks, setRemarks] = useState({});
+
+  useEffect(() => {
+    if (!isDaily) return;
+    api
+      .get('/remarks', { params: { date: sel.date } })
+      .then(({ data }) => {
+        setRemarks(Object.fromEntries(data.remarks.map((r) => [String(r.user), r.text])));
+      })
+      // The hours are the point of this page; a failed note fetch must not
+      // stop them rendering.
+      .catch(() => setRemarks({}));
+  }, [isDaily, sel.date]);
 
   useEffect(() => {
     api
@@ -233,6 +254,9 @@ export default function Finance() {
               <th>Total hours</th>
               <th>Shifts</th>
               <th>Hours per shift</th>
+              {/* A remark belongs to a single day, so the column only makes
+                  sense while a single day is being shown. */}
+              {isDaily && <th>Remarks</th>}
               {/* Dropped when printing: buttons are no use on paper. This is the
                   team-wide print only — the per-person report is a separate
                   document and is untouched. */}
@@ -241,7 +265,7 @@ export default function Finance() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={5} className="activity-empty">No completed shifts in {range.label}.</td></tr>
+              <tr><td colSpan={colCount} className="activity-empty">No completed shifts in {range.label}.</td></tr>
             )}
             {pageRows.map((r) => {
               const perShift = Math.round(r.minutes / r.sessions);
@@ -273,6 +297,13 @@ export default function Finance() {
                       {formatDuration(perShift)}
                     </span>
                   </td>
+                  {isDaily && (
+                    <td className="remark-cell">
+                      {/* Finance reads payroll rather than writing it, so the
+                          note is shown but not editable here. */}
+                      <RemarkCell userId={r.userId} date={sel.date} value={remarks[r.userId]} readOnly />
+                    </td>
+                  )}
                   <td className="status-col-cell no-print">
                     <div className="actions-cell">
                       <button
@@ -307,7 +338,7 @@ export default function Finance() {
               );
             })}
 
-            <FillerRows count={fillerCount(PAGE_SIZE, pageRows.length)} colSpan={5} tall />
+            <FillerRows count={fillerCount(PAGE_SIZE, pageRows.length)} colSpan={colCount} tall />
           </tbody>
         </table>
       </div>

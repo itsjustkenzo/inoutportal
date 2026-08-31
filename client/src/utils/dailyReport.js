@@ -41,14 +41,30 @@ export function downloadCsv(filename, header, rows) {
  */
 export async function fetchDailyReport(person, range) {
   const zone = zoneForRegion(person.region);
-  const { data } = await api.get('/entries/history', {
-    params: {
-      userId: person.userId,
-      from: range.from.toISOString(),
-      to: range.to.toISOString(),
-      limit: 100,
-    },
-  });
+
+  // Remarks are keyed by the same YYYY-MM-DD the table writes them against, so
+  // a note lands on the day the admin was looking at.
+  const [{ data }, remarks] = await Promise.all([
+    api.get('/entries/history', {
+      params: {
+        userId: person.userId,
+        from: range.from.toISOString(),
+        to: range.to.toISOString(),
+        limit: 100,
+      },
+    }),
+    api
+      .get('/remarks', {
+        params: {
+          userId: person.userId,
+          from: toDateInput(range.from, zone),
+          to: toDateInput(range.to, zone),
+        },
+      })
+      .then(({ data: d }) => new Map(d.remarks.map((r) => [r.date, r.text])))
+      // A report is still worth having if the notes cannot be fetched.
+      .catch(() => new Map()),
+  ]);
 
   const byDay = new Map();
   // The API returns newest first; a report reads better oldest first.
@@ -72,12 +88,15 @@ export async function fetchDailyReport(person, range) {
       sessions: d.sessions.length,
       hours: formatDuration(d.minutes),
       minutes: d.minutes,
+      remark: remarks.get(d.date) || '',
     };
   });
 
   return {
     days,
     zone,
+    // Lets the outputs drop the column entirely when nothing was written.
+    hasRemarks: days.some((d) => d.remark),
     totalMinutes: data.totalMinutes,
     // A month sits far below the cap, but a long period could reach it.
     truncated: data.total > data.entries.length,
@@ -91,16 +110,18 @@ const clockNote = (person, report) =>
   person.region && person.region !== 'Global' ? `${person.region} time (${report.zone})` : '';
 
 export function downloadDailyCsv(person, range, report) {
-  const rows = report.days.map((d) => [d.date, d.day, d.in, d.out, d.sessions, d.hours, d.minutes]);
+  const rows = report.days.map((d) => [
+    d.date, d.day, d.in, d.out, d.sessions, d.hours, d.minutes, d.remark,
+  ]);
   rows.push([]);
-  rows.push(['Total', '', '', '', '', formatDuration(report.totalMinutes), report.totalMinutes]);
+  rows.push(['Total', '', '', '', '', formatDuration(report.totalMinutes), report.totalMinutes, '']);
 
   const note = clockNote(person, report);
   if (note) rows.push(['Times shown in', note]);
 
   downloadCsv(
     `${person.username}-${slug(range.label)}.csv`,
-    ['Date', 'Day', 'First in', 'Last out', 'Sessions', 'Hours', 'Minutes'],
+    ['Date', 'Day', 'First in', 'Last out', 'Sessions', 'Hours', 'Minutes', 'Remarks'],
     rows
   );
 }
@@ -136,6 +157,7 @@ export function openDailyPdf(person, range, report) {
   td { padding: 8px 10px; border-bottom: 1px solid #e6edf5; }
   td.num, th.num { text-align: right; }
   tfoot td { border-top: 2px solid #12283f; border-bottom: none; font-weight: 700; padding-top: 11px; }
+  td.remark { color: #334155; font-style: italic; max-width: 260px; }
   .empty { padding: 30px; text-align: center; color: #64748b; }
   .note { margin-top: 14px; font-size: 11px; color: #64748b; }
   @page { margin: 14mm; }
@@ -153,15 +175,18 @@ ${days.length === 0 ? '<div class="empty">No completed shifts in this period.</d
   <thead><tr>
     <th>Date</th><th>Day</th><th>First in</th><th>Last out</th>
     <th class="num">Sessions</th><th class="num">Hours</th>
+    ${report.hasRemarks ? '<th>Remarks</th>' : ''}
   </tr></thead>
   <tbody>
     ${days.map((d) => `<tr>
       <td>${esc(d.date)}</td><td>${esc(d.day)}</td><td>${esc(d.in)}</td><td>${esc(d.out)}</td>
       <td class="num">${esc(d.sessions)}</td><td class="num">${esc(d.hours)}</td>
+      ${report.hasRemarks ? `<td class="remark">${esc(d.remark)}</td>` : ''}
     </tr>`).join('')}
   </tbody>
   <tfoot><tr>
     <td colspan="5">Total</td><td class="num">${esc(formatDuration(totalMinutes))}</td>
+    ${report.hasRemarks ? '<td></td>' : ''}
   </tr></tfoot>
 </table>`}
 ${report.truncated ? '<div class="note">Only the most recent 100 records are included for this period.</div>' : ''}
