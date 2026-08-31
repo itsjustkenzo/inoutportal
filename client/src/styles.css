@@ -1,0 +1,2970 @@
+/*
+ * Blue & white theme. Light is the base palette; the dark values are declared
+ * twice on purpose — once for the OS preference (when the user has not picked)
+ * and once for an explicit [data-theme="dark"], so the toggle wins either way.
+ */
+:root {
+  /*
+   * Tells the browser which scheme to paint the controls it draws itself:
+   * <select> popups, date and datetime pickers, and default scrollbars. Without
+   * it those stay light on a dark page — a white dropdown carrying the page's
+   * light text, which is invisible. Declared alongside the palette so the two
+   * can never disagree.
+   */
+  color-scheme: light;
+
+  --bg: #f2f6fd;
+  --bg-accent: #e3ecfb;
+  --surface: #ffffff;
+  --surface-soft: #f7faff;
+  --border: #d8e3f5;
+  --text: #0f1c34;
+  --muted: #5b6b8a;
+  --primary: #1d4ed8;
+  --primary-hover: #1a43ba;
+  --primary-soft: #e6edfd;
+  --on-primary: #ffffff;
+  --ring: rgba(29, 78, 216, 0.35);
+  --success: #0f7a53;
+  --success-soft: #e2f5ed;
+  --on-success: #ffffff;
+  --danger: #c0303c;
+  --danger-soft: #fdeaec;
+  --on-danger: #ffffff;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(15, 28, 52, 0.05), 0 10px 30px rgba(15, 28, 52, 0.08);
+
+  /* Login-page palette */
+  --panel: #ffffff;
+  --panel-alt: #f6faff;
+  --hairline: #dce8f6;
+  --faint: #5c7189;
+  --blue: #2e8be6;
+  --blue-deep: #1768c2;
+  --blue-tint: #e7f2ff;
+  --halo-strong: rgba(46, 139, 230, 0.1);
+  --halo-soft: rgba(46, 139, 230, 0.035);
+}
+
+:root[data-theme='dark'] { color-scheme: dark; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) { color-scheme: dark; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0a1020;
+    --bg-accent: #0f1a30;
+    --surface: #131d33;
+    --surface-soft: #17233d;
+    --border: #26375a;
+    --text: #e9f0fc;
+    --muted: #97a8c6;
+    --primary: #5b8dfb;
+    --primary-hover: #78a2ff;
+    --primary-soft: #17284a;
+    --on-primary: #06122a;
+    --ring: rgba(91, 141, 251, 0.45);
+    --success: #3ddb9d;
+    --success-soft: #0d3a2a;
+    --on-success: #04231a;
+    --danger: #ff8b93;
+    --danger-soft: #3a1d21;
+    --on-danger: #33070c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0a1020;
+  --bg-accent: #0f1a30;
+  --surface: #131d33;
+  --surface-soft: #17233d;
+  --border: #26375a;
+  --text: #e9f0fc;
+  --muted: #97a8c6;
+  --primary: #5b8dfb;
+  --primary-hover: #78a2ff;
+  --primary-soft: #17284a;
+  --on-primary: #06122a;
+  --ring: rgba(91, 141, 251, 0.45);
+  --success: #3ddb9d;
+  --success-soft: #0d3a2a;
+  --on-success: #04231a;
+  --danger: #ff8b93;
+  --danger-soft: #3a1d21;
+  --on-danger: #33070c;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.4);
+
+  /* Login-page palette */
+  --panel: #0d1b2c;
+  --panel-alt: #102238;
+  --hairline: #1e3855;
+  --faint: #7f97b2;
+  --blue: #4fa3f7;
+  --blue-deep: #7dbbfa;
+  --blue-tint: #102b47;
+  --halo-strong: rgba(79, 163, 247, 0.12);
+  --halo-soft: rgba(79, 163, 247, 0.035);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  /* background-color, not the shorthand — see body.has-wallpaper below. */
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ---------- page scrollbar ---------- */
+/*
+ * Tinted to the active theme. The track stays transparent so it matches
+ * whatever background is behind it — the plain page, the dash gradient, or a
+ * wallpaper — rather than only matching one of them.
+ */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  /* Transparent border + content-box clip gives an inset thumb with breathing
+     room, instead of one filling the full gutter width. */
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.15rem; margin: 0; }
+
+a { color: var(--primary); }
+
+.container {
+  width: min(1040px, 100% - 2rem);
+  margin: 0 auto;
+}
+
+main.container { padding: 1.75rem 0 4rem; }
+
+.stack { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.centered { display: grid; place-items: center; min-height: 100vh; }
+
+/* ---------- navbar ---------- */
+.navbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 60px;
+  flex-wrap: wrap;
+}
+
+.brand { display: flex; align-items: center; gap: 0.4rem; font-weight: 700; }
+
+.brand-mark {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: 6px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.brand-text { color: var(--muted); font-weight: 600; }
+
+.nav-links { display: flex; gap: 1rem; margin-right: auto; }
+
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-links a:hover { color: var(--text); }
+.nav-links a.active { color: var(--text); border-bottom-color: var(--primary); }
+
+.nav-user { display: flex; align-items: center; gap: 0.6rem; }
+.nav-name { font-weight: 500; }
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.4rem;
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.auth-card { max-width: 420px; margin: 1rem auto; }
+
+/* ---------- login page ---------- */
+/* Full-bleed backdrop; the class is added by Login while it is mounted. */
+body.auth-bg {
+  background-image:
+    radial-gradient(900px 560px at 50% -180px, rgba(46, 139, 230, 0.22), transparent 68%),
+    linear-gradient(180deg, #f7fbff 0%, var(--bg) 52%, #eaf4ff 100%);
+}
+
+:root[data-theme='dark'] body.auth-bg {
+  background-image:
+    radial-gradient(900px 560px at 50% -180px, rgba(79, 163, 247, 0.18), transparent 68%),
+    linear-gradient(180deg, #0b1929 0%, var(--bg) 55%, #06101d 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body.auth-bg {
+    background-image:
+      radial-gradient(900px 560px at 50% -180px, rgba(79, 163, 247, 0.18), transparent 68%),
+      linear-gradient(180deg, #0b1929 0%, var(--bg) 55%, #06101d 100%);
+  }
+}
+
+/* The page owns the viewport, so drop the shared main-container framing. */
+body.auth-bg main.container { width: 100%; padding: 0; margin: 0; }
+
+.auth-page {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: clamp(16px, 3vw, 24px);
+  /* Clips the decorative halo, which is wider than a phone viewport and would
+     otherwise push the page sideways. */
+  overflow: hidden;
+  /* Scoped to this page so the rest of the app keeps its existing type. */
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.login-wrap { position: relative; z-index: 1; width: 100%; max-width: 410px; }
+
+.login-wrap::before {
+  content: '';
+  position: absolute;
+  width: min(520px, 125vw);
+  height: min(520px, 125vw);
+  left: 50%;
+  top: 54%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--halo-strong) 0%, var(--halo-soft) 42%, transparent 72%);
+  filter: blur(4px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.theme-toggle-fixed {
+  position: fixed;
+  top: 24px;
+  right: 26px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  box-shadow: 0 8px 24px -18px rgba(23, 104, 194, 0.5);
+  z-index: 20;
+}
+
+.theme-toggle-fixed:hover { color: var(--blue); }
+.theme-toggle-fixed:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue-tint); }
+.theme-toggle-fixed svg { width: 18px; height: 18px; stroke: currentColor; }
+
+.brand-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.clock-logo {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--blue), var(--blue-deep));
+  box-shadow: 0 14px 32px -16px rgba(46, 139, 230, 0.75);
+  margin-bottom: 14px;
+}
+
+.clock-logo svg { width: 30px; height: 30px; stroke: #fff; }
+
+.brand-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(21px, 4vw, 25px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.login-card {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 22px;
+  padding: clamp(20px, 5vw, 30px);
+  box-shadow: 0 28px 70px -38px rgba(23, 104, 194, 0.45), 0 8px 28px -22px rgba(18, 35, 58, 0.2);
+}
+
+.login-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.login-error {
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.auth-page .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 17px;
+}
+
+.auth-page .field label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--faint);
+}
+
+.auth-page .field input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--panel-alt);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.auth-page .field input::placeholder { color: var(--faint); opacity: 1; }
+
+.auth-page .field input:focus {
+  background: var(--panel);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-tint);
+}
+
+/* Reveal toggle sits inside the field; the input reserves room for it so a long
+   password never runs underneath the button. */
+.password-field { position: relative; }
+.password-field input { padding-right: 46px; }
+
+.password-reveal {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+}
+
+.password-reveal svg { width: 18px; height: 18px; stroke: currentColor; }
+.password-reveal:hover { color: var(--text); background: var(--panel-alt); }
+
+.password-reveal:focus-visible {
+  outline: none;
+  color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-tint);
+}
+
+/* Edge and Safari add their own reveal control, which would sit on top. */
+.password-field input::-ms-reveal,
+.password-field input::-ms-clear { display: none; }
+
+.login-btn {
+  width: 100%;
+  height: 46px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--blue), #227ad2);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 22px -14px rgba(46, 139, 230, 0.8);
+}
+
+.login-btn:hover:not(:disabled) { filter: brightness(0.97); }
+.login-btn:active:not(:disabled) { transform: translateY(1px); }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue-tint); }
+
+/* ---------- dashboard ---------- */
+/* Design tokens scoped to the shell so the rest of the app keeps its palette. */
+.mod-shell {
+  --panel: #ffffff;
+  --panel-alt: #f5faff;
+  --hairline: #dceaf7;
+  --hairline-soft: #eaf2fa;
+  --dash-text: #12283f;
+  /* Both meet 4.5:1 on the container; muted stays the more prominent of the two. */
+  --text-muted: #4f6a86;
+  --text-faint: #5c7189;
+  --blue: #2e8cee;
+  --blue-deep: #1768c2;
+  --blue-tint: #eaf4fe;
+  --green: #1e9e6b;
+  /* Ink for text sitting on a 12–14% tinted pill, where the plain --green and
+     --amber are too light to clear 4.5:1. */
+  --green-ink: #0e7345;
+  --amber-ink: #8a5d05;
+  --red: #e0475f;
+  --slate: #6b7f98;
+  --r-lg: 22px;
+  --r-sm: 10px;
+  --shadow-card: 0 10px 26px -18px rgba(23, 104, 194, 0.28);
+  --shadow-brand: 0 6px 14px -6px rgba(23, 104, 194, 0.55);
+  --toggle-track: #dceaf7;
+  --toggle-thumb: #fff;
+  --toggle-icon: #6483a3;
+}
+
+:root[data-theme='dark'] .mod-shell {
+  --panel: #12161b;
+  --panel-alt: #161b21;
+  --hairline: #232a31;
+  --hairline-soft: #1b2027;
+  --dash-text: #e7ecef;
+  --text-muted: #8a93a0;
+  --text-faint: #7d8794;
+  --blue: #3fd0ff;
+  --blue-deep: #3fd0ff;
+  --blue-tint: rgba(63, 208, 255, 0.12);
+  --green: #35d07f;
+  --green-ink: #35d07f;
+  --amber-ink: #f5a623;
+  --red: #ff5c6c;
+  --slate: #7c8896;
+  --shadow-card: 0 12px 32px -18px rgba(0, 0, 0, 0.55);
+  --shadow-brand: 0 6px 16px -6px rgba(63, 208, 255, 0.35);
+  --toggle-track: #232a31;
+  --toggle-thumb: #0a0d10;
+  --toggle-icon: #3fd0ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .mod-shell {
+    --panel: #12161b;
+    --panel-alt: #161b21;
+    --hairline: #232a31;
+    --hairline-soft: #1b2027;
+    --dash-text: #e7ecef;
+    --text-muted: #8a93a0;
+    --text-faint: #7d8794;
+    --blue: #3fd0ff;
+    --blue-deep: #3fd0ff;
+    --blue-tint: rgba(63, 208, 255, 0.12);
+    --green: #35d07f;
+    --green-ink: #35d07f;
+    --amber-ink: #f5a623;
+    --red: #ff5c6c;
+    --slate: #7c8896;
+    --shadow-card: 0 12px 32px -18px rgba(0, 0, 0, 0.55);
+    --shadow-brand: 0 6px 16px -6px rgba(63, 208, 255, 0.35);
+    --toggle-track: #232a31;
+    --toggle-thumb: #0a0d10;
+    --toggle-icon: #3fd0ff;
+  }
+}
+
+/* Longhand on purpose: the `background` shorthand also resets background-size,
+   -repeat and -attachment, which would strip the wallpaper's cover/fixed sizing
+   whenever a higher-specificity theme rule applied. */
+body.dash-bg {
+  background-color: #eaf3fc;
+  background-image: radial-gradient(ellipse 1000px 520px at 100% -12%, rgba(46, 140, 238, 0.1), transparent);
+}
+
+:root[data-theme='dark'] body.dash-bg {
+  background-color: #0a0d10;
+  background-image: radial-gradient(ellipse 1000px 520px at 100% -12%, rgba(63, 208, 255, 0.07), transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body.dash-bg {
+    background-color: #0a0d10;
+    background-image: radial-gradient(ellipse 1000px 520px at 100% -12%, rgba(63, 208, 255, 0.07), transparent);
+  }
+}
+
+body.dash-bg main.container { width: 100%; max-width: none; padding: 0; margin: 0; }
+
+.mod-shell {
+  display: grid;
+  /* The sidebar narrows before it disappears, so the content column keeps
+     shrinking smoothly instead of holding 264px until the breakpoint. One
+     variable so the wallpaper layer's inset can never drift out of sync. */
+  --sidebar-w: clamp(200px, 18vw, 264px);
+  /* Spacing scales with the viewport instead of stepping at breakpoints.
+     --gutter is the space around the container, --pad the space inside it. */
+  --gutter: clamp(12px, 2.2vw, 32px);
+  --pad: clamp(16px, 1.9vw, 28px);
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-width: 0;
+  min-height: 100vh;
+  color: var(--dash-text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.dash-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  /* Scrolls internally on a short window. Without this the nav is simply
+     clipped, and since the bar is sticky, scrolling the page never reveals
+     the items below the fold — Logout becomes unreachable. */
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px 20px;
+  background: var(--panel);
+  border-right: 1px solid var(--hairline);
+}
+
+.user-greeting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 26px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.user-avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  /* Follows the account's accent rather than a fixed blue. */
+  background: linear-gradient(135deg, var(--blue), var(--blue-deep));
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: var(--shadow-brand);
+}
+
+.greeting-line { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
+.greeting-kicker { font-size: 14px; color: var(--text-muted); }
+.greeting-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; }
+
+.nav-label {
+  padding: 14px 12px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+}
+
+.dash-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.dash-nav-item svg { width: 18px; height: 18px; stroke: var(--text-muted); flex-shrink: 0; }
+.dash-nav-item:hover { background: var(--panel-alt); color: var(--dash-text); }
+.dash-nav-item.active { background: var(--blue-tint); color: var(--blue-deep); font-weight: 600; }
+.dash-nav-item.active svg { stroke: var(--blue-deep); }
+
+.sidebar-spacer { flex: 1; min-height: 0; }
+
+/* Without this, a short sidebar squashes its children instead of scrolling. */
+.dash-sidebar > .user-greeting,
+.dash-sidebar > .nav-label,
+.dash-sidebar > .dash-nav-item,
+.dash-sidebar > .logout-btn { flex-shrink: 0; }
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline);
+  background: var(--panel-alt);
+  color: var(--text-muted);
+  font: 600 13px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.logout-btn:hover { color: var(--dash-text); }
+.logout-btn svg { width: 17px; height: 17px; stroke: currentColor; }
+
+/* Fills the grid column so the wallpaper reaches the right edge; the 1400px
+   reading width lives on the inner wrapper. */
+.dash-main { padding: clamp(16px, 3vw, 48px) var(--gutter) clamp(28px, 4vw, 56px); min-width: 0; }
+
+/* One surface holding the header and the page body, divided by a rule — same
+   pattern as the account card. Padding sits on the two halves, not the shell,
+   so the rule runs edge to edge. */
+.dash-content {
+  overflow: hidden;
+  /* Tinted, so the white cards inside it still read as distinct surfaces. */
+  background: var(--panel-alt);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+  flex-wrap: wrap;
+  padding: var(--pad);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.dash-body { padding: var(--pad); }
+
+/* Hide the scrollbars on the app's own scroll containers while keeping them
+   scrollable — wheel, trackpad, touch and keyboard all still work. */
+.dash-sidebar,
+.activity-scroll,
+.table-wrap {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dash-sidebar::-webkit-scrollbar,
+.activity-scroll::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* Pages whose content is itself the panel (My Account) meet the container
+   edges; only loose elements like alerts keep an inset. */
+.dash-body.flush { padding: 0; }
+.dash-body.flush > .dash-error,
+.dash-body.flush > .dash-success { margin: var(--pad) var(--pad) 0; }
+
+/* ---------- split rows ---------- */
+/* Two equal halves divided by a rule, stacked into rows divided by rules.
+   minmax(0, 1fr) so a wide child cannot push its column past half; cells
+   stretch to equal height so the vertical rule spans the row. */
+.split-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--hairline);
+}
+
+.split-cell { min-width: 0; padding: var(--pad); }
+.split-row > .split-cell + .split-cell { border-left: 1px solid var(--hairline); }
+
+/* Section header for a full-width block below the split rows. */
+.section-head { padding: var(--pad); border-bottom: 1px solid var(--hairline); }
+
+/* 700, not 1000: the sidebar is already gone below 1180, so the container has
+   the full window. Collapsing at 1000 left one very wide column that the
+   content could not fill, with dead space down the right. */
+@media (max-width: 700px) {
+  .split-row { grid-template-columns: 1fr; }
+  .split-row > .split-cell + .split-cell { border-left: none; border-top: 1px solid var(--hairline); }
+}
+
+.page-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(21px, 2.3vw, 30px); }
+.page-sub { margin-top: 6px; font-size: 13.5px; color: var(--text-muted); }
+
+.dash-theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dash-theme-toggle svg { width: 15px; height: 15px; stroke: var(--toggle-icon); }
+.dash-theme-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue-tint); border-radius: 8px; }
+
+.toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--toggle-track);
+  border: 1px solid var(--hairline);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--toggle-thumb);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s;
+}
+
+.dash-theme-toggle[aria-pressed='true'] .toggle-thumb { transform: translateX(20px); }
+
+.dash-error {
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* ---------- accent colours ---------- */
+/* Declared after the dark block so a chosen accent wins in both themes.
+   Only the accent hues change — backgrounds stay theme-appropriate. */
+:root[data-accent='red'] .mod-shell { --blue: #ef5350; --blue-deep: #c93636; --blue-tint: #fdecec; }
+:root[data-accent='yellow'] .mod-shell { --blue: #d6a514; --blue-deep: #a87b00; --blue-tint: #fff8d9; }
+:root[data-accent='pink'] .mod-shell { --blue: #ec6fa9; --blue-deep: #c54c84; --blue-tint: #fdebf4; }
+:root[data-accent='green'] .mod-shell { --blue: #35b77a; --blue-deep: #218a59; --blue-tint: #e7f8f0; }
+:root[data-accent='blue'] .mod-shell { --blue: #2e8cee; --blue-deep: #1768c2; --blue-tint: #eaf4fe; }
+:root[data-accent='purple'] .mod-shell { --blue: #8b6be8; --blue-deep: #6748c8; --blue-tint: #f0ecfd; }
+:root[data-accent='cyan'] .mod-shell { --blue: #20bfd5; --blue-deep: #118da1; --blue-tint: #e4f9fc; }
+
+/* Dark mode needs lighter tints, or the active nav pill turns into a bright slab. */
+:root[data-theme='dark'][data-accent='red'] .mod-shell { --blue: #ff7b78; --blue-deep: #ff7b78; --blue-tint: rgba(255, 123, 120, 0.14); }
+:root[data-theme='dark'][data-accent='yellow'] .mod-shell { --blue: #f4c542; --blue-deep: #f4c542; --blue-tint: rgba(244, 197, 66, 0.14); }
+:root[data-theme='dark'][data-accent='pink'] .mod-shell { --blue: #ff8fc0; --blue-deep: #ff8fc0; --blue-tint: rgba(255, 143, 192, 0.14); }
+:root[data-theme='dark'][data-accent='green'] .mod-shell { --blue: #4bd995; --blue-deep: #4bd995; --blue-tint: rgba(75, 217, 149, 0.14); }
+:root[data-theme='dark'][data-accent='blue'] .mod-shell { --blue: #5ba8ff; --blue-deep: #5ba8ff; --blue-tint: rgba(91, 168, 255, 0.14); }
+:root[data-theme='dark'][data-accent='purple'] .mod-shell { --blue: #a98cff; --blue-deep: #a98cff; --blue-tint: rgba(169, 140, 255, 0.14); }
+:root[data-theme='dark'][data-accent='cyan'] .mod-shell { --blue: #3fd0ff; --blue-deep: #3fd0ff; --blue-tint: rgba(63, 208, 255, 0.14); }
+
+/*
+ * A page can pin its own accent, overriding whoever is looking at it — the
+ * finance report is green for an admin or a manager too, not just for the
+ * finance account, and it cannot drift if someone's stored preference changes.
+ *
+ * These must stay *after* the rules above: the selectors carry the same
+ * specificity, so source order is what decides.
+ */
+:root .mod-shell.accent-green { --blue: #35b77a; --blue-deep: #218a59; --blue-tint: #e7f8f0; }
+
+:root[data-theme='dark'] .mod-shell.accent-green {
+  --blue: #4bd995;
+  --blue-deep: #4bd995;
+  --blue-tint: rgba(75, 217, 149, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .mod-shell.accent-green {
+    --blue: #4bd995;
+    --blue-deep: #4bd995;
+    --blue-tint: rgba(75, 217, 149, 0.14);
+  }
+}
+
+/* ---------- wallpaper ---------- */
+/*
+ * Painted on the content column, not on <body>. The sidebar is opaque, so a
+ * viewport-wide background would sit underneath it and lose its left edge —
+ * the image now begins exactly where the sidebar ends and is fully visible.
+ *
+ * The first background layer is a flat veil that keeps text legible over an
+ * arbitrary photo; --wallpaper is set by PrefsContext.
+ */
+/*
+ * A fixed layer inset by the sidebar width, rather than a background on
+ * .dash-main. Backgrounds size to their element, so `cover` cropped the image
+ * differently on every page — a long page scaled it far more than a short one.
+ * Anchored to the viewport it is identical everywhere and does not drift on scroll.
+ */
+.wallpaper-layer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--sidebar-w, 0px);
+  z-index: 0;
+  pointer-events: none;
+  /* --veil-* are written by PrefsContext from the dimming slider; the fallbacks
+     apply only if that has not run yet. */
+  background-image:
+    linear-gradient(var(--veil-light, rgba(203, 219, 238, 0.7)), var(--veil-light, rgba(203, 219, 238, 0.7))),
+    var(--wallpaper);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+:root[data-theme='dark'] .wallpaper-layer {
+  background-image:
+    linear-gradient(var(--veil-dark, rgba(10, 13, 16, 0.78)), var(--veil-dark, rgba(10, 13, 16, 0.78))),
+    var(--wallpaper);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .wallpaper-layer {
+    background-image:
+      linear-gradient(var(--veil-dark, rgba(10, 13, 16, 0.78)), var(--veil-dark, rgba(10, 13, 16, 0.78))),
+      var(--wallpaper);
+  }
+}
+
+/* Keep the sidebar and content above the layer. */
+body.has-wallpaper .dash-sidebar { z-index: 2; }
+body.has-wallpaper .dash-main { position: relative; z-index: 1; }
+
+/*
+ * Over a wallpaper the whole container frosts rather than just the header, so
+ * every surface inside it stays legible against any photo. Scoped to
+ * has-wallpaper, so the plain background keeps its flat treatment.
+ */
+body.has-wallpaper .dash-content {
+  background: rgba(245, 250, 255, 0.86);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+:root[data-theme='dark'] body.has-wallpaper .dash-content { background: rgba(22, 27, 33, 0.86); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body.has-wallpaper .dash-content { background: rgba(22, 27, 33, 0.86); }
+}
+
+/* Without backdrop blur the tint carries all the separation, so make it solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body.has-wallpaper .dash-content { background: var(--panel-alt); }
+}
+
+/* --text-muted is ~2.9:1 over a worst-case photo; these clear AA. */
+body.has-wallpaper .page-sub { color: #3d5875; }
+
+:root[data-theme='dark'] body.has-wallpaper .page-sub { color: #aeb8c6; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body.has-wallpaper .page-sub { color: #aeb8c6; }
+}
+
+/* The inset follows --sidebar-w, so no separate breakpoint is needed here. */
+
+/* ---------- account page ---------- */
+/* Layout comes from .split-row / .split-cell; this is the last row on the page,
+   so it drops the trailing rule. */
+.account-split { border-bottom: none; }
+
+/* Audit accounts drop the Personalization column, so the split collapses
+   rather than leaving an empty half. */
+.account-split.single { grid-template-columns: minmax(0, 1fr); }
+
+.section-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.section-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
+
+.profile-row { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; }
+
+.profile-preview {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  /* Follows the account's accent rather than a fixed blue. */
+  background: linear-gradient(135deg, var(--blue), var(--blue-deep));
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.profile-preview img, .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-avatar { overflow: hidden; }
+
+.profile-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+
+.wallpaper-row { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; flex-wrap: wrap; }
+
+.wallpaper-preview {
+  width: 150px;
+  height: 84px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  border: 1px solid var(--hairline);
+  background-color: var(--panel-alt);
+  background-size: cover;
+  background-position: center;
+  box-shadow: var(--shadow-card);
+}
+
+.wallpaper-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+.wallpaper-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.file-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--blue-tint);
+  color: var(--blue-deep);
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--panel-alt);
+  color: var(--text-muted);
+  font: 600 12.5px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.ghost-btn:hover { color: var(--dash-text); }
+.file-input { display: none; }
+.file-note { font-size: 11.5px; color: var(--text-faint); }
+
+/* ---------- admin dashboard ---------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--pad);
+  padding: var(--pad);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.stat-card {
+  padding: 20px 22px;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.stat-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+
+.stat-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+}
+
+.stat-icon svg { width: 19px; height: 19px; }
+
+.stat-delta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.stat-num { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(24px, 2.6vw, 32px); line-height: 1; margin-bottom: 8px; }
+.stat-label { font-size: 13px; color: var(--text-muted); }
+
+.stat-in .stat-icon { background: rgba(30, 158, 107, 0.1); }
+.stat-in .stat-icon svg { stroke: var(--green); }
+.stat-in .stat-delta { background: rgba(30, 158, 107, 0.1); color: var(--green); }
+
+.stat-total .stat-icon { background: var(--blue-tint); }
+.stat-total .stat-icon svg { stroke: var(--blue); }
+.stat-total .stat-delta { background: var(--blue-tint); color: var(--blue-deep); }
+
+.stat-out .stat-icon { background: rgba(107, 127, 152, 0.12); }
+.stat-out .stat-icon svg { stroke: var(--slate); }
+.stat-out .stat-delta { background: rgba(107, 127, 152, 0.12); color: var(--slate); }
+
+/* Activity feed beside the attendance table, divided by a rule. */
+.admin-panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+.admin-panel { min-width: 0; }
+.admin-panels > .admin-panel + .admin-panel { border-left: 1px solid var(--hairline); }
+
+/* Full-width change trail below the two-column row. */
+.log-panel { border-top: 1px solid var(--hairline); }
+
+/* `.sort-select` is normally a button; as a link it needs the text colour back. */
+a.sort-select { color: var(--dash-text); text-decoration: none; }
+a.sort-select:hover { border-color: var(--blue); color: var(--blue-deep); }
+
+.activity-list { padding: 4px var(--pad) var(--pad); }
+.activity-empty-block { padding: 22px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.activity-item:last-child { border-bottom: none; }
+
+.act-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.act-avatar.is-in { background: var(--green); }
+.act-avatar.is-out { background: var(--slate); }
+:root[data-theme='dark'] .act-avatar { color: #06121a; }
+
+.act-body { flex: 1; min-width: 0; }
+.act-name { font-size: 13.5px; font-weight: 600; }
+.act-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.act-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+
+.act-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.tag-in { background: rgba(30, 158, 107, 0.12); color: var(--green); }
+.tag-out { background: rgba(107, 127, 152, 0.12); color: var(--slate); }
+.act-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+
+.attendance-table th.num, .status-col-cell { text-align: right; }
+/* Fixed height so a one-line cell and a two-line cell produce the same row.
+   Without it, text line-height rounding leaves rows at 66px or 67px and a
+   paginated table finishes a few pixels short on some pages. */
+.mod-cell { display: flex; align-items: center; gap: 11px; height: 40px; }
+
+.mod-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.mod-avatar.is-onduty { background: var(--green); }
+.mod-avatar.is-completed { background: var(--slate); }
+.mod-avatar.is-absent { background: var(--red, #e0475f); }
+:root[data-theme='dark'] .mod-avatar { color: #06121a; }
+
+/*
+ * A profile picture sits inside the coloured disc rather than replacing it, so
+ * the ring still carries the status the colour encoded before there was a face
+ * to show. box-sizing is border-box throughout, so the padding does not change
+ * the slot's footprint in the row.
+ */
+.mod-avatar.has-photo,
+.act-avatar.has-photo,
+.user-avatar.has-photo { padding: 2px; }
+
+.mod-avatar img,
+.act-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.mod-name { font-weight: 600; font-size: 13.5px; }
+.mod-role { font-size: 11.5px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+.pill-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pill-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; }
+.pill-onduty { background: rgba(30, 158, 107, 0.12); color: var(--green); }
+.pill-onduty::before { background: var(--green); box-shadow: 0 0 6px 1px rgba(30, 158, 107, 0.5); }
+.pill-completed { background: rgba(107, 127, 152, 0.12); color: var(--slate); }
+.pill-completed::before { background: var(--slate); }
+.pill-absent { background: rgba(224, 71, 95, 0.12); color: var(--red, #e0475f); }
+.pill-absent::before { background: var(--red, #e0475f); }
+
+@media (max-width: 1000px) {
+  .stats { grid-template-columns: 1fr; }
+  .admin-panels { grid-template-columns: minmax(0, 1fr); }
+  .admin-panels > .admin-panel + .admin-panel { border-left: none; border-top: 1px solid var(--hairline); }
+}
+
+/* ---------- moderator report ---------- */
+.tabs { display: flex; gap: 26px; padding: 0 var(--pad); border-bottom: 1px solid var(--hairline); }
+
+.tab-btn {
+  padding: 14px 2px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab-btn.active { color: var(--blue-deep); border-bottom-color: var(--blue-deep); }
+.tab-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue-tint); border-radius: 6px; }
+
+.toolbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.sort-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  color: var(--dash-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sort-select svg { width: 13px; height: 13px; stroke: var(--text-muted); }
+.sort-select:hover { background: var(--panel-alt); }
+
+.export-buttons { display: flex; gap: 10px; }
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--dash-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.export-btn svg { width: 15px; height: 15px; }
+.export-btn.pdf svg { stroke: var(--red); }
+.export-btn.excel svg { stroke: var(--green); }
+.export-btn:hover { background: var(--panel-alt); }
+.export-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* In-row variant, for the per-moderator reports. */
+.export-btn.compact { padding: 6px 10px; font-size: 11px; gap: 6px; border-radius: 9px; }
+.export-btn.compact svg { width: 13px; height: 13px; }
+
+.search-box {
+  display: flex;
+  /* The shared `label` rule stacks children in a column; this one is a row. */
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  /* Fixed rather than flexible: the two tabs have different toolbar contents,
+     and a growable box ended up a different width on each. */
+  flex: 0 0 auto;
+  width: 280px;
+  max-width: 100%;
+  height: 38px;
+  padding: 0 13px;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-box:hover { border-color: var(--text-faint); }
+
+/* focus-within so the whole box reacts, not just the bare input. */
+.search-box:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.search-box:focus-within svg { stroke: var(--blue); }
+
+.search-box svg { width: 16px; height: 16px; stroke: var(--text-faint); flex-shrink: 0; transition: stroke 0.15s; }
+
+.search-box input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--dash-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 400;
+}
+
+.search-box input::placeholder { color: var(--text-faint); opacity: 1; }
+.search-box input:focus { box-shadow: none; background: transparent; }
+
+/* Chrome draws its own clear button; the box has its own styling. */
+.search-box input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+
+.date-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+}
+
+.date-picker input {
+  width: auto;
+  padding: 0 4px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--dash-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.date-picker input:focus { box-shadow: none; background: transparent; }
+.date-picker .calendar { width: 15px; height: 15px; stroke: var(--blue-deep); flex-shrink: 0; }
+
+/* Our own calendar button is the affordance, so hide the browser's — two
+   calendar glyphs side by side read as two different controls. */
+.date-picker input::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.date-open {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.date-open:hover { background: var(--blue-tint); }
+.date-open:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue-tint); }
+.date-picker:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+
+/* Export PDF prints the page, so strip everything that is not the report. */
+@media print {
+  .dash-sidebar,
+  .wallpaper-layer,
+  .toolbar,
+  .tabs,
+  .pagination,
+  .dash-theme-toggle { display: none !important; }
+
+  body, body.dash-bg { background: #fff !important; }
+  .mod-shell { display: block; min-height: 0; }
+  .dash-main { padding: 0; }
+
+  .dash-content {
+    background: #fff;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .activity-scroll { overflow: visible; }
+  .activity-table tbody tr { break-inside: avoid; }
+}
+
+.date-nav-btn {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--panel-alt);
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.date-nav-btn:hover { color: var(--dash-text); }
+
+.muted-italic { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-faint); font-style: italic; }
+
+.hours-bar-wrap { display: flex; align-items: center; gap: 10px; }
+
+.hours-bar-track {
+  width: 84px;
+  height: 6px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--hairline-soft);
+}
+
+.hours-bar-fill { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
+
+/* Average hours per shift. Amber marks a short average — usually a missed
+   clock-out or a fragmented shift — so payroll can reconcile it. */
+.rate-pill {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(30, 158, 107, 0.12);
+  color: var(--green-ink);
+}
+
+.rate-pill.low { background: rgba(201, 127, 18, 0.14); color: var(--amber-ink); }
+
+/* ---------- moderator management ---------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding: var(--pad);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.form-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.form-field.full, .form-foot.full { grid-column: 1 / -1; }
+
+.form-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--panel-alt);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  color: var(--dash-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.form-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); background: var(--panel); }
+.form-input::placeholder { color: var(--text-faint); opacity: 1; }
+
+.select-wrap { position: relative; }
+
+.form-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 11px 38px 11px 14px;
+  background: var(--panel-alt);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  color: var(--dash-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.form-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+
+.select-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display: flex;
+}
+
+.select-chevron svg { width: 14px; height: 14px; stroke: var(--text-muted); }
+
+.password-wrap { position: relative; }
+.password-wrap .form-input { padding-right: 116px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.03em; }
+.field-inline-btns { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; }
+
+.icon-mini-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font: 600 11px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.icon-mini-btn svg { width: 14px; height: 14px; stroke: var(--text-muted); }
+.icon-mini-btn:hover { color: var(--dash-text); background: var(--panel-alt); }
+
+.form-foot { display: flex; justify-content: flex-end; }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px -10px rgba(46, 140, 238, 0.55);
+  white-space: pre;
+}
+
+:root[data-theme='dark'] .btn-primary { color: #06121a; }
+.btn-primary:hover:not(:disabled) { filter: brightness(0.96); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.pill-granted { background: rgba(30, 158, 107, 0.12); color: var(--green); }
+.pill-granted::before { background: var(--green); box-shadow: 0 0 6px 1px rgba(30, 158, 107, 0.5); }
+.pill-revoked { background: rgba(224, 71, 95, 0.12); color: var(--red); }
+.pill-revoked::before { background: var(--red); }
+
+.manage-btn {
+  padding: 8px 16px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.manage-btn.to-revoke { background: rgba(224, 71, 95, 0.06); color: var(--red); border-color: rgba(224, 71, 95, 0.3); }
+.manage-btn.to-grant { background: rgba(30, 158, 107, 0.06); color: var(--green); border-color: rgba(30, 158, 107, 0.3); }
+.manage-btn:hover { filter: brightness(0.97); }
+
+.table-select-wrap { position: relative; display: inline-block; }
+
+.table-select {
+  width: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 7px 30px 7px 11px;
+  background: var(--panel-alt);
+  border: 1px solid var(--hairline);
+  border-radius: 9px;
+  color: var(--dash-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.table-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.table-select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Editable cell, for correcting clock-in/out times in place. */
+.table-input {
+  width: 100%;
+  min-width: 190px;
+  padding: 7px 10px;
+  background: var(--panel-alt);
+  border: 1px solid var(--hairline);
+  border-radius: 9px;
+  color: var(--dash-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+.table-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+
+/* Sized like .time-input, so the add-record row stays on one line rather than
+   each field growing to fill the flex row. */
+.datetime-input { width: 230px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+.note-input { width: 220px; }
+
+:root[data-theme='dark'] .datetime-input::-webkit-calendar-picker-indicator { filter: invert(1); }
+:root[data-theme='dark'] .table-input::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+.table-select-chevron {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display: flex;
+}
+
+.table-select-chevron svg { width: 12px; height: 12px; stroke: var(--text-muted); }
+
+.password-dots { font-family: 'IBM Plex Mono', monospace; font-size: 14px; letter-spacing: 2px; color: var(--text-muted); }
+.actions-cell { display: flex; gap: 8px; justify-content: flex-end; }
+
+.icon-action-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.icon-action-btn svg { width: 14px; height: 14px; }
+.icon-action-btn.reset svg { stroke: var(--blue-deep); }
+.icon-action-btn.delete svg { stroke: var(--red); }
+.icon-action-btn.save svg { stroke: var(--green); }
+.manage-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.sort-select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------- loading cat ---------- */
+/*
+ * A 4x2 sprite sheet. `background-size: 400% 200%` sizes the sheet so one cell
+ * fills the box, then two step animations walk it: columns over one cycle, rows
+ * over four cycles so the second row starts only after the first four frames.
+ * `jump-none` is what makes the steps land on 0% and 100% inclusive — plain
+ * steps() would skip the last column.
+ *
+ * The artwork carries its own dark backdrop, so the element is rounded to make
+ * that read as a deliberate badge rather than a stray dark rectangle.
+ */
+.loading-cat {
+  display: block;
+  width: var(--cat-w, 96px);
+  height: calc(var(--cat-w, 96px) * 4 / 3);
+  border-radius: 18px;
+  background-repeat: no-repeat;
+  background-size: 400% 200%;
+  background-position: 0% 0%;
+  box-shadow: 0 12px 28px -14px rgba(8, 15, 26, 0.65);
+  animation:
+    cat-col 0.36s steps(4, jump-none) infinite,
+    cat-row 0.72s steps(2, jump-none) infinite;
+}
+
+@keyframes cat-col {
+  from { background-position-x: 0%; }
+  to { background-position-x: 100%; }
+}
+
+@keyframes cat-row {
+  from { background-position-y: 0%; }
+  to { background-position-y: 100%; }
+}
+
+/* Transparent: the panel's own surface stays visible, so a wallpaper still
+   shows through the glass instead of being covered by a flat slab. What hides
+   the stale content is the rule below, not a scrim. */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: transparent;
+}
+
+/* Hides the panel's own children while the cover is up. `visibility` rather
+   than `display`, so the layout underneath does not collapse and nothing
+   shifts when the work finishes. */
+.is-busy:has(> .loading-overlay) > *:not(.loading-overlay) { visibility: hidden; }
+
+/* Without :has() the children stay visible, so the cover has to be solid there
+   or the half-written content would show behind the cat. */
+@supports not selector(:has(*)) {
+  .loading-overlay { background: var(--panel-alt); }
+}
+
+.loading-overlay-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+.loading-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Anchor for an overlay that should cover just this block. */
+.is-busy { position: relative; }
+
+/* Full-page bootstrap, before any shell exists. */
+.loading-page { display: grid; place-items: center; min-height: 100vh; gap: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Hold a single frame rather than flickering through the sheet. */
+  .loading-cat { animation: none; background-position: 0% 0%; }
+}
+
+/* ---------- region picker ---------- */
+.region-select { position: relative; width: 100%; }
+
+.region-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--panel-alt);
+  color: var(--dash-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.region-trigger svg { width: 14px; height: 14px; stroke: var(--text-muted); flex-shrink: 0; }
+.region-trigger:hover:not(:disabled) { border-color: var(--blue); }
+.region-trigger.open { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.region-trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+.region-placeholder { color: var(--text-faint); }
+
+/* Compact form, for use inside a table row. */
+.region-select.compact .region-trigger {
+  padding: 7px 11px;
+  border-radius: 9px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+/*
+ * Rendered into <body> rather than beside the trigger, because every panel it
+ * appears in clips its overflow. Fixed positioning, with the coordinates set
+ * from the trigger's box in JS.
+ *
+ * Being outside .mod-shell it no longer inherits that scope's palette, so the
+ * surface colours are restated here for both themes.
+ */
+.region-menu {
+  position: fixed;
+  z-index: 120;
+  min-width: 240px;
+  /* Column so the search stays put and only the list scrolls; max-height is
+     set inline from the room actually available. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--hairline, #dceaf7);
+  border-radius: 12px;
+  background: #fff;
+  color: #12283f;
+  box-shadow: 0 18px 44px -18px rgba(16, 34, 56, 0.45);
+}
+
+.region-menu .region-search { border-bottom-color: rgba(18, 40, 63, 0.1); }
+.region-menu .region-search input { color: inherit; }
+.region-menu .region-search svg { stroke: #90a6bd; }
+.region-menu .region-group { color: #90a6bd; }
+.region-menu .region-option { color: inherit; }
+.region-menu .region-option.active { background: rgba(18, 40, 63, 0.06); }
+.region-menu .region-option.selected { background: #eaf4fe; color: #1768c2; }
+.region-menu .region-empty { color: #6483a3; }
+
+:root[data-theme='dark'] .region-menu,
+:root[data-theme='dark'] .region-menu .region-option { color: #e7ecef; }
+
+:root[data-theme='dark'] .region-menu {
+  border-color: #232a31;
+  background: #12161b;
+  box-shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme='dark'] .region-menu .region-search { border-bottom-color: #232a31; }
+:root[data-theme='dark'] .region-menu .region-search svg,
+:root[data-theme='dark'] .region-menu .region-group { stroke: #7d8794; color: #7d8794; }
+:root[data-theme='dark'] .region-menu .region-option.active { background: #161b21; }
+:root[data-theme='dark'] .region-menu .region-option.selected { background: rgba(63, 208, 255, 0.14); color: #3fd0ff; }
+:root[data-theme='dark'] .region-menu .region-empty { color: #8a93a0; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .region-menu,
+  :root:not([data-theme='light']) .region-menu .region-option { color: #e7ecef; }
+
+  :root:not([data-theme='light']) .region-menu {
+    border-color: #232a31;
+    background: #12161b;
+    box-shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.7);
+  }
+
+  :root:not([data-theme='light']) .region-menu .region-search { border-bottom-color: #232a31; }
+  :root:not([data-theme='light']) .region-menu .region-search svg,
+  :root:not([data-theme='light']) .region-menu .region-group { stroke: #7d8794; color: #7d8794; }
+  :root:not([data-theme='light']) .region-menu .region-option.active { background: #161b21; }
+  :root:not([data-theme='light']) .region-menu .region-option.selected { background: rgba(63, 208, 255, 0.14); color: #3fd0ff; }
+  :root:not([data-theme='light']) .region-menu .region-empty { color: #8a93a0; }
+}
+
+.region-search {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.region-search svg { width: 15px; height: 15px; stroke: var(--text-faint); flex-shrink: 0; }
+
+.region-search input {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--dash-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.region-options { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; }
+.region-search { flex-shrink: 0; }
+
+.region-group {
+  padding: 10px 10px 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.region-option {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--dash-text);
+  cursor: pointer;
+}
+
+.region-option.active { background: var(--panel-alt); }
+.region-option.selected { background: var(--blue-tint); color: var(--blue-deep); font-weight: 600; }
+.region-empty { padding: 18px 12px; text-align: center; font-size: 13px; color: var(--text-muted); }
+
+/* ---------- database import ---------- */
+.import-source { border-top: 1px solid var(--hairline); }
+
+.import-note {
+  padding: 0 var(--pad) 14px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.import-foot { padding: 18px var(--pad); border-top: 1px solid var(--hairline); }
+
+.import-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 var(--pad) 16px;
+}
+
+.import-link-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.import-link-row .select-wrap { min-width: 150px; }
+
+/* Column header doubles as its own map-to-field control. */
+.import-col { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.import-col-name { font-size: 10.5px; letter-spacing: 0.08em; }
+
+/* A column with no mapping is dimmed, so what will be dropped is obvious. */
+.import-skipped { opacity: 0.35; }
+
+/* The source name doubles as its include toggle. */
+.day-pill.checked-hidden {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: inherit;
+  font-weight: 700;
+  color: inherit;
+}
+
+.day-pill.checked-hidden input { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; }
+
+/* ---------- live connection indicator ---------- */
+.head-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--panel-alt);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
+
+.live-pill.is-live { color: var(--green-ink); border-color: rgba(30, 158, 107, 0.35); }
+.live-pill.is-live .live-dot { background: var(--green); animation: live-pulse 2s ease-in-out infinite; }
+
+.live-pill.is-connecting .live-dot { animation: live-pulse 1s ease-in-out infinite; }
+
+.live-pill.is-offline { color: var(--amber-ink); border-color: rgba(201, 127, 18, 0.35); }
+.live-pill.is-offline .live-dot { background: var(--amber-ink); }
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(30, 158, 107, 0.45); }
+  50% { opacity: 0.65; box-shadow: 0 0 0 5px rgba(30, 158, 107, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-pill .live-dot { animation: none; }
+}
+
+/* ---------- server health ---------- */
+/* Wraps rather than squeezing, so the tiles stay readable as they are added to. */
+.health-stats { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+.storage-meter { padding: 0 var(--pad) var(--pad); }
+
+.storage-meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+  flex-wrap: wrap;
+}
+
+.storage-meter-head .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); }
+.storage-bar { width: 100%; height: 8px; }
+
+/* A failing tile has to read as a failure at a glance, not as neutral data. */
+.stat-down .stat-icon { background: rgba(224, 71, 95, 0.12); }
+.stat-down .stat-icon svg { stroke: var(--red, #e0475f); }
+.stat-down .stat-delta { background: rgba(224, 71, 95, 0.12); color: var(--red, #e0475f); }
+.stat-down .stat-num { color: var(--red, #e0475f); }
+
+/* Uptime reads as text rather than a figure, so it does not need the full
+   display size the numeric tiles use. */
+.health-uptime { font-size: clamp(20px, 2vw, 26px); }
+
+.health-list { display: flex; flex-direction: column; gap: 0; margin: 4px 0 0; }
+
+.health-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.health-list > div:last-child { border-bottom: none; }
+
+.health-list dt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.health-list dd { margin: 0; font-size: 13px; text-align: right; word-break: break-all; }
+
+@media (max-width: 900px) {
+  .health-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---------- activity log ---------- */
+.log-summary { font-size: 13px; font-weight: 500; }
+
+/* The change column carries the widest content, so it is the one that grows. */
+.log-cell { width: 45%; min-width: 320px; }
+
+/* Always present and always the same height, even with no diffs to show, so
+   every log row measures the same whatever the entry changed. Entries with
+   more fields than fit scroll inside this box rather than stretching the row. */
+.log-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 7px;
+  height: 38px;
+  overflow-y: auto;
+}
+
+.log-change {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  white-space: normal;
+}
+
+.log-field {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--hairline-soft);
+  color: var(--text-muted);
+}
+
+.log-from { color: var(--text-faint); text-decoration: line-through; }
+.log-arrow { color: var(--text-faint); }
+.log-to { color: var(--dash-text); font-weight: 600; }
+.icon-action-btn:hover:not(:disabled) { background: var(--panel-alt); }
+.icon-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+@media (max-width: 760px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- schedule ---------- */
+.assign-row { display: flex; align-items: center; gap: 12px; padding: 20px var(--pad) 14px; flex-wrap: wrap; }
+.select-wrap.min { min-width: 190px; }
+.assign-row .select-wrap { min-width: 190px; }
+.region-readonly { min-width: 170px; color: var(--text-faint); cursor: not-allowed; background: var(--hairline-soft); }
+.time-input { width: 190px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.03em; }
+.to-label { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; color: var(--text-muted); }
+
+.days-row { display: flex; gap: 10px; padding: 0 var(--pad) 22px; flex-wrap: wrap; border-bottom: 1px solid var(--hairline); }
+
+.day-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 16px 9px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--dash-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.day-checkbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--hairline);
+  border-radius: 4px;
+  background: var(--panel-alt);
+}
+
+.day-checkbox svg { display: none; width: 10px; height: 10px; stroke: #fff; }
+.day-pill.checked { border-color: var(--blue); background: var(--blue-tint); color: var(--blue-deep); }
+.day-pill.checked .day-checkbox { background: var(--blue); border-color: var(--blue); }
+.day-pill.checked .day-checkbox svg { display: block; }
+
+.schedule-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.schedule-table { min-width: 1020px; }
+.days-cell { white-space: normal; max-width: 220px; }
+
+.day-chip {
+  display: inline-flex;
+  margin: 2px 3px 2px 0;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--blue-tint);
+  color: var(--blue-deep);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.converted-cell { display: flex; flex-direction: column; gap: 2px; }
+.converted-time { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--dash-text); }
+.converted-tz { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-faint); }
+
+/* ---- timeline ---- */
+.timeline-wrap { padding: 6px var(--pad) var(--pad); overflow-x: auto; }
+.timeline-board { min-width: 900px; border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+.tl-row { display: grid; grid-template-columns: 220px minmax(0, 1fr) 190px; }
+.tl-row:last-child .tl-mod-cell, .tl-row:last-child .tl-track, .tl-row:last-child .tl-days-cell { border-bottom: none; }
+
+.tl-col-head,
+.tl-timeline-head {
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.tl-col-head {
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.tl-col-head.days-head { justify-content: flex-end; }
+
+.tl-timeline-head { position: relative; height: 40px; }
+
+.tl-timeline-head span {
+  position: absolute;
+  top: 14px;
+  transform: translateX(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.tl-timeline-head span:last-child { transform: translateX(-100%); }
+
+.tl-mod-cell,
+.tl-days-cell {
+  display: flex;
+  align-items: center;
+  height: 70px;
+  padding: 0 18px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.tl-mod-cell { gap: 11px; min-width: 0; }
+.tl-mod-region { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.tl-days-cell { justify-content: flex-end; flex-wrap: wrap; gap: 4px; }
+
+.tl-track { position: relative; height: 70px; background: var(--panel); border-bottom: 1px solid var(--hairline-soft); }
+.tl-gridlines { position: absolute; inset: 0; }
+.tl-gridlines i { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--hairline-soft); }
+.tl-gridlines i.major { background: var(--hairline); }
+
+.tl-bar {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.tl-bar .t.dim { opacity: 0.65; }
+.tl-bar-morning { background: rgba(30, 158, 107, 0.12); border: 1px solid rgba(30, 158, 107, 0.4); color: var(--green); }
+.tl-bar-afternoon { background: var(--blue-tint); border: 1px solid rgba(46, 140, 238, 0.4); color: var(--blue-deep); }
+.tl-bar-night { background: rgba(124, 92, 252, 0.14); border: 1px solid rgba(124, 92, 252, 0.42); color: #7c5cfc; }
+:root[data-theme='dark'] .tl-bar-night { color: #a78bfa; }
+
+.tl-now-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--blue) 8%, var(--blue) 92%, transparent);
+}
+
+.tl-now-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px 2px rgba(46, 140, 238, 0.6);
+}
+
+.grid-legend { display: flex; gap: 22px; padding: 16px 2px 0; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); }
+.legend-swatch { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+
+@media (max-width: 760px) {
+  .assign-row .select-wrap, .region-readonly, .time-input { width: 100%; min-width: 0; }
+}
+
+/* ---------- crop dialog ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 32px);
+  background: rgba(8, 14, 24, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 380px;
+  padding: clamp(20px, 4vw, 26px);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
+}
+
+.modal-head { margin-bottom: 18px; }
+.modal-sub { margin-bottom: 0; }
+.modal-error { margin: 14px 0 0; }
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* Square frame; the mask paints everything outside the inscribed circle. */
+.crop-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--panel-alt);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.crop-frame:active { cursor: grabbing; }
+
+.crop-img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* A huge spread shadow is the simplest way to dim outside a circle without
+   clipping the draggable image underneath. */
+.crop-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(10, 16, 28, 0.55);
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+
+.crop-zoom { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+.crop-zoom .theme-color-title { margin-bottom: 0; flex-shrink: 0; }
+
+/* ---------- dimming slider ---------- */
+.dim-row { margin: 0 0 26px; }
+.dim-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 10px; }
+.dim-value { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); }
+
+.dim-slider {
+  width: 100%;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--hairline);
+  accent-color: var(--blue);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.dim-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--panel);
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 1px 4px rgba(18, 40, 63, 0.3);
+  cursor: pointer;
+}
+
+.dim-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--panel);
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+}
+
+.dim-slider:disabled { opacity: 0.45; cursor: not-allowed; }
+.dim-slider:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue-tint); }
+
+.dim-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-top: 9px; }
+
+.link-btn {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--blue-deep);
+  font: 600 11.5px 'Inter', sans-serif;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.theme-color-row { margin: 0 0 28px; }
+
+.theme-color-title {
+  margin-bottom: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.theme-color-options { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.color-choice {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--hairline);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.color-choice:hover { transform: translateY(-1px); }
+.color-choice.active { box-shadow: 0 0 0 2px var(--dash-text); }
+.color-name { margin-top: 9px; font-size: 12px; color: var(--text-muted); }
+
+/* Fixed two columns, not auto-fit: auto-fit collapses empty tracks, which made a
+   lone field (Current Password) stretch the full width again. */
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
+.account-split .field { display: flex; flex-direction: column; gap: 8px; }
+.account-split .field.full { grid-column: 1 / -1; }
+
+.account-split .field label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.account-split .field input,
+.account-split .field select {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--panel-alt);
+  color: var(--dash-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.account-split .field input:focus,
+.account-split .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.account-split .field input[readonly] { color: var(--text-muted); cursor: not-allowed; background: var(--hairline-soft); }
+
+.form-note { margin-top: 2px; font-size: 11.5px; color: var(--text-faint); }
+.divider { height: 1px; background: var(--hairline); margin: 26px 0; }
+.actions { display: flex; justify-content: flex-end; margin-top: 22px; }
+
+.save-btn {
+  padding: 11px 18px;
+  border: none;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+:root[data-theme='dark'] .save-btn { color: #06121a; }
+.save-btn:hover:not(:disabled) { filter: brightness(0.96); }
+.save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.dash-success {
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 13px;
+}
+
+/* Stacking and the rule flip are handled by .split-row's own 1000px query. */
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .split-cell { padding: 22px 20px; }
+}
+
+/* ---------- report toolbar ---------- */
+/* A section of the page container, divided by a rule like the rows below it. */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: var(--pad);
+  border-bottom: 1px solid var(--hairline);
+}
+.toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--panel-alt);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+}
+
+.segmented button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button.active { background: var(--panel); color: var(--blue-deep); box-shadow: 0 2px 6px rgba(23, 104, 194, 0.15); }
+.segmented button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue-tint); }
+
+.period-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+}
+
+.period-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.picker-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.period-picker input,
+.period-picker select {
+  width: auto;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--dash-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.period-picker input:focus,
+.period-picker select:focus { box-shadow: none; background: transparent; }
+:root[data-theme='dark'] .period-picker input::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+/*
+ * The option list of a native <select> is painted by the browser, not the page,
+ * and it takes its colours from the control's own background. `transparent`
+ * resolves to white, so in dark mode the list came out white with near-white
+ * text on it. Naming the colours explicitly fixes the popup as well as the
+ * closed control.
+ */
+.period-picker select option,
+.form-select option,
+.table-select option {
+  background-color: var(--panel, #fff);
+  color: var(--dash-text, #12283f);
+}
+
+/* ---------- report summary ---------- */
+.summary-label {
+  margin-bottom: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+}
+
+.summary-value { font-family: 'Space Grotesk', sans-serif; font-size: clamp(26px, 3vw, 38px); font-weight: 700; line-height: 1; }
+.summary-small { font-family: 'Space Grotesk', sans-serif; font-size: clamp(21px, 2.2vw, 28px); font-weight: 700; }
+.summary-meta { margin-top: 9px; font-size: 13px; color: var(--text-muted); }
+
+.clock-label {
+  margin-bottom: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.clock-time { font-family: 'Space Grotesk', sans-serif; font-size: clamp(24px, 2.7vw, 34px); font-weight: 700; font-variant-numeric: tabular-nums; }
+.clock-meta { margin-top: 8px; font-size: 12.5px; color: var(--text-muted); }
+
+.action-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 18px; }
+.action-title, .status-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; }
+
+.duty-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(107, 127, 152, 0.1);
+  color: var(--slate);
+}
+
+.duty-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--slate); }
+.duty-pill.on { background: rgba(30, 158, 107, 0.1); color: var(--green); }
+.duty-pill.on::before { background: var(--green); box-shadow: 0 0 6px 1px rgba(30, 158, 107, 0.5); }
+
+.session-copy { margin-bottom: 18px; font-size: 13px; color: var(--text-muted); }
+
+.session-timer {
+  margin-bottom: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: clamp(20px, 2vw, 26px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-btn {
+  width: 100%;
+  padding: 13px 18px;
+  border: none;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+:root[data-theme='dark'] .clock-btn { color: #06121a; }
+.clock-btn.out { background: var(--slate); color: #fff; }
+.clock-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.clock-btn:hover:not(:disabled) { filter: brightness(0.97); }
+
+.status-title { margin-bottom: 18px; }
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.status-row:last-child { border-bottom: none; }
+.status-key { font-size: 13px; color: var(--text-muted); }
+.status-value { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; }
+
+.panel-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15.5px; }
+.panel-sub { margin-top: 3px; font-size: 12px; color: var(--text-muted); }
+
+.activity-scroll { overflow-x: auto; }
+.activity-table { width: 100%; border-collapse: collapse; }
+
+.activity-table th {
+  padding: 13px var(--pad);
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.activity-table td {
+  padding: 14px var(--pad);
+  border-bottom: 1px solid var(--hairline-soft);
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+.activity-table tbody tr:last-child td { border-bottom: none; }
+
+/* Spacer rows that hold the table at a fixed height. An empty cell collapses to
+   its padding, so ::after supplies a non-breaking space to give it a line box
+   the same height as a real row. */
+.filler-row td { border-bottom: none; }
+.filler-row td::after { content: '\00a0'; }
+
+/* Rows carrying an avatar stand taller than a text row — measured at 66px — so
+   their spacers have to match or the panel still changes height between pages.
+   Real rows land on 66 or 67px depending on how their text wraps, so a short
+   page can still finish a few pixels off a full one — under 1% either way. */
+.filler-row.tall td { height: var(--filler-h, 69px); padding: 0; }
+
+/* A table whose rows carry a diff box stands taller than a plain avatar row,
+   so it declares the height its spacers must match. Both figures are measured
+   from the rendered page, not guessed. */
+.row-log { --filler-h: 111px; }
+.filler-row.tall td::after { content: none; }
+
+/* Same idea for the activity feed, which is a list rather than a table. */
+.activity-item.filler { height: 73px; border-bottom: none; pointer-events: none; }
+.activity-table .mono { font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); font-size: 12.5px; }
+.activity-table .strong { color: var(--dash-text); font-weight: 600; }
+.activity-empty { text-align: center; color: var(--text-muted); padding: 28px 22px; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 16px var(--pad);
+  border-top: 1px solid var(--hairline);
+}
+
+.pagination-info { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); }
+.pagination-pages { display: flex; gap: 6px; }
+
+.page-btn {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--hairline);
+  background: var(--panel-alt);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled):not(.active) { color: var(--dash-text); }
+.page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.page-btn.active { background: var(--blue-tint); color: var(--blue-deep); border-color: transparent; font-weight: 700; }
+
+/* 1180 rather than 1000: a restored-down window on a 1080p screen lands around
+   1100px, where a 264px sidebar leaves the content column too cramped. */
+@media (max-width: 1180px) {
+  /* Spacing is fluid, so only the shell's shape changes here: the sidebar
+     becomes a sticky top strip rather than disappearing, which would leave the
+     page with no navigation and no way to log out. */
+  .mod-shell { --sidebar-w: 0px; grid-template-columns: minmax(0, 1fr); }
+
+  .dash-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 10px var(--gutter);
+    border-right: none;
+    border-bottom: 1px solid var(--hairline);
+    overflow-x: auto;
+    /* Nav must not be clipped by the wallpaper layer beneath it. */
+    background: var(--panel);
+  }
+
+  .user-greeting {
+    padding: 0 10px 0 0;
+    margin: 0;
+    border-bottom: none;
+    flex-shrink: 0;
+  }
+
+  .nav-label, .sidebar-spacer { display: none; }
+  .dash-nav-item { flex-shrink: 0; padding: 9px 12px; }
+  .logout-btn { width: auto; flex-shrink: 0; margin-left: auto; }
+}
+
+/* Icons-only before the labels overflow — at 560 the strip already scrolled and
+   pushed Logout off-screen. Sized for the admin case (four nav items). */
+@media (max-width: 860px) {
+  .greeting-line { display: none; }
+  .dash-nav-item { padding: 9px; gap: 0; font-size: 0; }
+  .dash-nav-item svg { width: 20px; height: 20px; }
+  .logout-btn { font-size: 0; gap: 0; padding: 9px 11px; }
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 18px;
+  color: var(--faint);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+/* Padding on the auth page and card is fluid, so only the fixed toggle moves. */
+@media (max-width: 480px) {
+  .theme-toggle-fixed { top: 16px; right: 16px; }
+}
+
+.login-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.login-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 0.6rem;
+  border-radius: 11px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+
+.login-foot { margin-bottom: 0; text-align: center; }
+
+/* Wraps an input plus its trailing button (e.g. show/hide password). */
+.input-with-affix { position: relative; display: block; }
+.input-with-affix input { padding-right: 4.25rem; }
+
+.input-affix-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+}
+
+.input-affix-btn:hover { background: var(--primary-soft); }
+.input-affix-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+/* ---------- theme toggle ---------- */
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.theme-toggle:hover { color: var(--primary); border-color: var(--primary); }
+.theme-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+.punch-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 4px solid var(--border);
+}
+
+.punch-card.punch-in { border-left-color: var(--success); }
+.punch-card.punch-out { border-left-color: var(--muted); }
+
+.punch-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+.note-input { min-width: 240px; }
+
+/* ---------- forms ---------- */
+.form { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem; }
+
+label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+
+input, select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  width: 100%;
+}
+
+input::placeholder { color: var(--muted); opacity: 0.7; }
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--ring);
+  background: var(--surface);
+}
+
+input:disabled { opacity: 0.6; }
+
+.filters { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.filters label { max-width: 180px; }
+
+/* ---------- buttons ---------- */
+.btn {
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-lg { padding: 0.75rem 1.6rem; font-size: 1rem; }
+.btn-block { width: 100%; padding: 0.7rem 1rem; margin-top: 0.25rem; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.btn-success { background: var(--success); color: var(--on-success); }
+.btn-danger { background: var(--danger); color: var(--on-danger); }
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+.btn-ghost:hover:not(:disabled) { color: var(--text); }
+
+/* ---------- board ---------- */
+.board { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.board-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.board-row-in { background: var(--success-soft); border-color: transparent; }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.board-main { flex: 1; min-width: 0; }
+.board-name { font-weight: 600; display: flex; align-items: center; gap: 0.4rem; }
+.board-right { text-align: right; }
+
+.tag {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--border);
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+}
+
+.pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+}
+
+.pill-in { background: var(--success); color: var(--on-success); }
+.pill-out { background: var(--border); color: var(--muted); }
+
+/* ---------- tables ---------- */
+.table-wrap { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+
+th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+
+th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+
+tbody tr:last-child td { border-bottom: none; }
+
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+
+/* ---------- misc ---------- */
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+
+.alert { border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.9rem; }
+.alert-error { background: var(--danger-soft); color: var(--danger); }
+.alert-success { background: var(--success-soft); color: var(--success); }
+
+@media (max-width: 620px) {
+  .navbar-inner { padding: 0.6rem 0; }
+  .nav-links { order: 3; width: 100%; margin-right: 0; }
+  .punch-actions { width: 100%; }
+  .note-input { flex: 1; min-width: 0; }
+}
