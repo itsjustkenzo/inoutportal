@@ -1359,12 +1359,25 @@ a.sort-select:hover { border-color: var(--blue); color: var(--blue-deep); }
 
 /* Export PDF prints the page, so strip everything that is not the report. */
 @media print {
+  /*
+   * Anything clickable is noise on paper. `no-print` marks whole table columns
+   * — the per-person export buttons — and the rest are controls sitting outside
+   * the toolbar that would otherwise print as dead widgets.
+   *
+   * Only affects the team-wide print. A per-person report is written into its
+   * own window with its own styles, so nothing here reaches it.
+   */
   .dash-sidebar,
   .wallpaper-layer,
   .toolbar,
   .tabs,
   .pagination,
-  .dash-theme-toggle { display: none !important; }
+  .dash-theme-toggle,
+  .no-print,
+  .actions-cell,
+  .export-btn,
+  .live-pill,
+  .date-nav-btn { display: none !important; }
 
   body, body.dash-bg { background: #fff !important; }
   .mod-shell { display: block; min-height: 0; }

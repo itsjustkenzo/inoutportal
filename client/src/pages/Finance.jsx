@@ -233,7 +233,10 @@ export default function Finance() {
               <th>Total hours</th>
               <th>Shifts</th>
               <th>Hours per shift</th>
-              <th className="num">Day-by-day report</th>
+              {/* Dropped when printing: buttons are no use on paper. This is the
+                  team-wide print only — the per-person report is a separate
+                  document and is untouched. */}
+              <th className="num no-print">Day-by-day report</th>
             </tr>
           </thead>
           <tbody>
@@ -270,7 +273,7 @@ export default function Finance() {
                       {formatDuration(perShift)}
                     </span>
                   </td>
-                  <td className="status-col-cell">
+                  <td className="status-col-cell no-print">
                     <div className="actions-cell">
                       <button
                         className="export-btn pdf compact"
