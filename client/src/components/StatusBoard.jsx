@@ -16,7 +16,7 @@ export default function StatusBoard({ users }) {
               {u.role === 'admin' && <span className="tag">admin</span>}
             </div>
             <div className="muted small">
-              {u.department}
+              @{u.username}
               {u.statusNote ? ` — ${u.statusNote}` : ''}
             </div>
           </div>

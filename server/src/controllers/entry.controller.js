@@ -65,7 +65,7 @@ export const punchOut = asyncHandler(async (req, res) => {
 /** Whoever is currently punched in, plus everyone else, for the board. */
 export const board = asyncHandler(async (req, res) => {
   const users = await User.find({ active: true })
-    .select('name email department status lastSeenAt statusNote role')
+    .select('name username email status lastSeenAt statusNote role')
     .sort({ status: 1, name: 1 })
     .lean();
 
@@ -250,7 +250,8 @@ export const overview = asyncHandler(async (req, res) => {
   // One event per punch, newest first.
   const activity = entries
     .flatMap((e) => {
-      const who = { userId: e.user._id, name: e.user.name, department: e.user.department };
+      // Handle rather than department: the reports identify people by username.
+      const who = { userId: e.user._id, name: e.user.name, username: e.user.username };
       const events = [{ ...who, type: 'in', at: e.in }];
       if (e.out) events.push({ ...who, type: 'out', at: e.out });
       return events;

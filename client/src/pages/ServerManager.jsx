@@ -1373,7 +1373,9 @@ export default function ServerManager() {
                         />
                         <div>
                           <div className="mod-name">{u.name}</div>
-                          <div className="mod-role">{u.region || u.department}</div>
+                          {/* Region only. It used to fall back to department,
+                              which is how "General" reappeared here. */}
+                          <div className="mod-role">{u.region}</div>
                         </div>
                       </div>
                     </td>

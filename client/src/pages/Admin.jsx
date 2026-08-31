@@ -192,7 +192,7 @@ export default function Admin() {
                 />
                 <div className="act-body">
                   <div className="act-name">{a.name}</div>
-                  <div className="act-meta">{a.department}</div>
+                  <div className="act-meta">@{a.username}</div>
                 </div>
                 <div className="act-right">
                   <span className={`act-tag ${a.type === 'in' ? 'tag-in' : 'tag-out'}`}>

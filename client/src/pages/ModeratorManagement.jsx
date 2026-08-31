@@ -318,7 +318,7 @@ export default function ModeratorManagement() {
                         />
                         <div>
                           <div className="mod-name">{m.name}</div>
-                          <div className="mod-role">{m.department}</div>
+                          <div className="mod-role">@{m.username}</div>
                         </div>
                       </div>
                     </td>
