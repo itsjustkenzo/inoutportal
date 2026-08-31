@@ -1167,8 +1167,10 @@ a.sort-select:hover { border-color: var(--blue); color: var(--blue-deep); }
 
 /* --- Remarks: an admin's note against one moderator's day --- */
 
-.remark-col { min-width: 200px; }
-.remark-cell { max-width: 280px; }
+.remark-col { min-width: 260px; }
+.remark-cell { max-width: 340px; }
+
+.remark-wrap { display: flex; align-items: center; gap: 6px; }
 
 .remark-input {
   width: 100%;
@@ -1196,6 +1198,38 @@ a.sort-select:hover { border-color: var(--blue); color: var(--blue-deep); }
 
 /* Dimmed while the save is in flight, so a slow network is visible. */
 .remark-input.saving { opacity: 0.6; }
+
+.remark-save {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  border: 1px solid var(--blue);
+  border-radius: 9px;
+  background: var(--blue-tint);
+  color: var(--blue-deep);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.remark-save svg { width: 12px; height: 12px; stroke: currentColor; fill: none; }
+
+.remark-save:hover:not(:disabled) { background: var(--blue); color: #fff; }
+
+/* Nothing to save reads as inert rather than broken. */
+.remark-save:disabled { opacity: 0.4; cursor: default; }
+
+.remark-save.saved {
+  border-color: var(--green);
+  background: transparent;
+  color: var(--green);
+  opacity: 1;
+}
 
 /* Finance shows the note without a field — it reads payroll, it does not write it. */
 .remark-text { font-size: 12.5px; color: var(--dash-text); font-style: italic; }
