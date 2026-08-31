@@ -21,13 +21,6 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-/*
- * An average shift shorter than this reads as a payroll anomaly — usually a
- * missed clock-out or a shift split across several sessions — so it is flagged
- * for reconciliation rather than passed through silently.
- */
-const SHORT_SHIFT_MINUTES = 4 * 60;
-
 const endOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
 /** Local-time bounds and a label for the reporting period. */
@@ -51,8 +44,8 @@ function periodRange(period, sel) {
 }
 
 /**
- * Payroll view for the audit role: billable hours, shift counts and the average
- * hours per shift over a chosen day, month or year. Read-only by design.
+ * Payroll view for the audit role: billable hours over a chosen day, month or
+ * year, with the admin's remark against each day. Read-only by design.
  */
 export default function Finance() {
   const now = useMemo(() => new Date(), []);
@@ -73,7 +66,7 @@ export default function Finance() {
   // A remark is written against one day, so the column only appears when the
   // report is showing one.
   const isDaily = period === 'daily';
-  const colCount = isDaily ? 6 : 5;
+  const colCount = isDaily ? 4 : 3;
 
   // userId -> remark text, for the selected day.
   const [remarks, setRemarks] = useState({});
@@ -150,7 +143,7 @@ export default function Finance() {
   return (
     <DashLayout
       title="Moderator's Contribution"
-      subtitle="Billable hours, shift counts and average hours per shift for payroll reconciliation"
+      subtitle="Billable hours per moderator for payroll reconciliation"
       flush
       accent="green"
     >
@@ -252,8 +245,6 @@ export default function Finance() {
             <tr>
               <th>Moderator</th>
               <th>Total hours</th>
-              <th>Shifts</th>
-              <th>Hours per shift</th>
               {/* A remark belongs to a single day, so the column only makes
                   sense while a single day is being shown. */}
               {isDaily && <th>Remarks</th>}
@@ -267,76 +258,67 @@ export default function Finance() {
             {filtered.length === 0 && (
               <tr><td colSpan={colCount} className="activity-empty">No completed shifts in {range.label}.</td></tr>
             )}
-            {pageRows.map((r) => {
-              const perShift = Math.round(r.minutes / r.sessions);
-              return (
-                <tr key={r.userId}>
-                  <td>
-                    <div className="mod-cell">
-                      <UserAvatar userId={r.userId} name={r.name} className="mod-avatar is-completed" />
-                      <div>
-                        <div className="mod-name">{r.name}</div>
-                        <div className="mod-role">@{r.username}</div>
-                      </div>
+            {pageRows.map((r) => (
+              <tr key={r.userId}>
+                <td>
+                  <div className="mod-cell">
+                    <UserAvatar userId={r.userId} name={r.name} className="mod-avatar is-completed" />
+                    <div>
+                      <div className="mod-name">{r.name}</div>
+                      <div className="mod-role">@{r.username}</div>
                     </div>
-                  </td>
-                  <td>
-                    <div className="hours-bar-wrap">
-                      <span className="mono strong">{formatDuration(r.minutes)}</span>
-                      <span className="hours-bar-track">
-                        <span
-                          className="hours-bar-fill"
-                          style={{ width: `${Math.round((r.minutes / topMinutes) * 100)}%` }}
-                        />
-                      </span>
-                    </div>
-                  </td>
-                  <td className="mono">{r.sessions}</td>
-                  <td>
-                    <span className={`rate-pill${perShift < SHORT_SHIFT_MINUTES ? ' low' : ''}`}>
-                      {formatDuration(perShift)}
+                  </div>
+                </td>
+                <td>
+                  <div className="hours-bar-wrap">
+                    <span className="mono strong">{formatDuration(r.minutes)}</span>
+                    <span className="hours-bar-track">
+                      <span
+                        className="hours-bar-fill"
+                        style={{ width: `${Math.round((r.minutes / topMinutes) * 100)}%` }}
+                      />
                     </span>
+                  </div>
+                </td>
+                {isDaily && (
+                  <td className="remark-cell">
+                    {/* Finance reads payroll rather than writing it, so the
+                        note is shown but not editable here. */}
+                    <RemarkCell userId={r.userId} date={sel.date} value={remarks[r.userId]} readOnly />
                   </td>
-                  {isDaily && (
-                    <td className="remark-cell">
-                      {/* Finance reads payroll rather than writing it, so the
-                          note is shown but not editable here. */}
-                      <RemarkCell userId={r.userId} date={sel.date} value={remarks[r.userId]} readOnly />
-                    </td>
-                  )}
-                  <td className="status-col-cell no-print">
-                    <div className="actions-cell">
-                      <button
-                        className="export-btn pdf compact"
-                        type="button"
-                        onClick={() => exportPerson(r, 'pdf')}
-                        disabled={busyExport === r.userId}
-                        title={`Day-by-day PDF for ${r.name}, ${range.label}`}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                          <path d="M14 2v6h6" />
-                        </svg>
-                        PDF
-                      </button>
-                      <button
-                        className="export-btn excel compact"
-                        type="button"
-                        onClick={() => exportPerson(r, 'csv')}
-                        disabled={busyExport === r.userId}
-                        title={`Day-by-day spreadsheet for ${r.name}, ${range.label}`}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-                        </svg>
-                        Excel
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                )}
+                <td className="status-col-cell no-print">
+                  <div className="actions-cell">
+                    <button
+                      className="export-btn pdf compact"
+                      type="button"
+                      onClick={() => exportPerson(r, 'pdf')}
+                      disabled={busyExport === r.userId}
+                      title={`Day-by-day PDF for ${r.name}, ${range.label}`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                        <path d="M14 2v6h6" />
+                      </svg>
+                      PDF
+                    </button>
+                    <button
+                      className="export-btn excel compact"
+                      type="button"
+                      onClick={() => exportPerson(r, 'csv')}
+                      disabled={busyExport === r.userId}
+                      title={`Day-by-day spreadsheet for ${r.name}, ${range.label}`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+                      </svg>
+                      Excel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
 
             <FillerRows count={fillerCount(PAGE_SIZE, pageRows.length)} colSpan={colCount} tall />
           </tbody>
