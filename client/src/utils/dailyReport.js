@@ -28,11 +28,12 @@ export function downloadCsv(filename, header, rows) {
 }
 
 /**
- * One person's shifts over a period, collapsed to a row per day.
+ * One person's shifts over a period, a row per shift.
  *
- * Someone can clock in and out several times in a day, so a day's total is the
- * sum of its sessions rather than the first-in to last-out span — those differ
- * whenever there is a break.
+ * Not a row per day: someone who works 12:00-16:00 and again 19:00-22:00 has
+ * two shifts, and collapsing them reads as one 12:00-22:00 stretch — a span of
+ * ten hours next to a total of seven. Each clock-in and clock-out keeps its own
+ * line, so the times and the hours beside them describe the same thing.
  *
  * Days are cut in the moderator's own zone, so a report about someone in Brazil
  * dates their shifts the way they do — and the way their own My Report does.
@@ -66,37 +67,43 @@ export async function fetchDailyReport(person, range) {
       .catch(() => new Map()),
   ]);
 
-  const byDay = new Map();
-  // The API returns newest first; a report reads better oldest first.
-  for (const e of [...data.entries].reverse()) {
-    const key = toDateInput(e.in, zone);
-    if (!byDay.has(key)) byDay.set(key, { date: key, at: e.in, sessions: [], minutes: 0 });
-    const day = byDay.get(key);
-    day.sessions.push(e);
-    day.minutes += e.minutes || 0;
-  }
+  // The API returns newest first; a report reads better oldest first. Shifts
+  // on the same day therefore sit next to each other, which is what lets the
+  // day's remark be attached to the first of them.
+  let previousDay = null;
 
-  const days = [...byDay.values()].map((d) => {
-    const last = d.sessions[d.sessions.length - 1];
+  const rows = [...data.entries].reverse().map((e) => {
+    const key = toDateInput(e.in, zone);
+    const opensTheDay = key !== previousDay;
+    previousDay = key;
+
     return {
-      // Labelled off a real instant from the day, so the weekday is the one that
+      key,
+      // Labelled off the shift's own instant, so the weekday is the one that
       // zone actually had — re-parsing "yyyy-mm-dd" would read it back locally.
-      date: formatDate(d.at, zone),
-      day: formatDay(d.at, zone),
-      in: formatClock(d.sessions[0].in, zone),
-      out: last.out ? formatClock(last.out, zone) : '—',
-      sessions: d.sessions.length,
-      hours: formatDuration(d.minutes),
-      minutes: d.minutes,
-      remark: remarks.get(d.date) || '',
+      date: formatDate(e.in, zone),
+      day: formatDay(e.in, zone),
+      in: formatClock(e.in, zone),
+      out: e.out ? formatClock(e.out, zone) : '—',
+      // A shift still open has no duration yet; 0m would read as "worked none".
+      hours: e.out ? formatDuration(e.minutes || 0) : '—',
+      minutes: e.out ? e.minutes || 0 : 0,
+      /*
+       * A remark belongs to the day, not to a shift within it. Putting it on
+       * the day's first row shows it once instead of repeating it against every
+       * shift, which would read as several separate notes.
+       */
+      remark: opensTheDay ? remarks.get(key) || '' : '',
     };
   });
 
   return {
-    days,
+    rows,
     zone,
+    // Distinct days, for the summary line — no longer the same as the row count.
+    dayCount: new Set(rows.map((r) => r.key)).size,
     // Lets the outputs drop the column entirely when nothing was written.
-    hasRemarks: days.some((d) => d.remark),
+    hasRemarks: rows.some((r) => r.remark),
     totalMinutes: data.totalMinutes,
     // A month sits far below the cap, but a long period could reach it.
     truncated: data.total > data.entries.length,
@@ -110,18 +117,17 @@ const clockNote = (person, report) =>
   person.region && person.region !== 'Global' ? `${person.region} time (${report.zone})` : '';
 
 export function downloadDailyCsv(person, range, report) {
-  const rows = report.days.map((d) => [
-    d.date, d.day, d.in, d.out, d.sessions, d.hours, d.minutes, d.remark,
-  ]);
+  // No Sessions column: every row is one shift, so it would read 1 throughout.
+  const rows = report.rows.map((r) => [r.date, r.day, r.in, r.out, r.hours, r.minutes, r.remark]);
   rows.push([]);
-  rows.push(['Total', '', '', '', '', formatDuration(report.totalMinutes), report.totalMinutes, '']);
+  rows.push(['Total', '', '', '', formatDuration(report.totalMinutes), report.totalMinutes, '']);
 
   const note = clockNote(person, report);
   if (note) rows.push(['Times shown in', note]);
 
   downloadCsv(
     `${person.username}-${slug(range.label)}.csv`,
-    ['Date', 'Day', 'First in', 'Last out', 'Sessions', 'Hours', 'Minutes', 'Remarks'],
+    ['Date', 'Day', 'Clock in', 'Clock out', 'Hours', 'Minutes', 'Remarks'],
     rows
   );
 }
@@ -140,7 +146,7 @@ export function openDailyPdf(person, range, report) {
   const win = window.open('', '_blank', 'width=900,height=1000');
   if (!win) return 'Your browser blocked the report window. Allow pop-ups for this site and try again.';
 
-  const { days, totalMinutes } = report;
+  const { rows, dayCount, totalMinutes } = report;
   const note = clockNote(person, report);
 
   win.document.write(`<!doctype html>
@@ -158,6 +164,9 @@ export function openDailyPdf(person, range, report) {
   td.num, th.num { text-align: right; }
   tfoot td { border-top: 2px solid #12283f; border-bottom: none; font-weight: 700; padding-top: 11px; }
   td.remark { color: #334155; font-style: italic; max-width: 260px; }
+  /* A day's later shifts read as belonging to the row above. */
+  tr.same-day td { border-top: none; }
+  tr.same-day td:first-child, tr.same-day td:nth-child(2) { color: #94a3b8; }
   .empty { padding: 30px; text-align: center; color: #64748b; }
   .note { margin-top: 14px; font-size: 11px; color: #64748b; }
   @page { margin: 14mm; }
@@ -166,26 +175,27 @@ export function openDailyPdf(person, range, report) {
 <h1>${esc(person.name)}</h1>
 <div class="meta">
   <b>@${esc(person.username)}</b> &nbsp;·&nbsp; ${esc(range.label)}
-  &nbsp;·&nbsp; ${days.length} day${days.length === 1 ? '' : 's'} worked
+  &nbsp;·&nbsp; ${dayCount} day${dayCount === 1 ? '' : 's'} worked
+  &nbsp;·&nbsp; ${rows.length} shift${rows.length === 1 ? '' : 's'}
   &nbsp;·&nbsp; total <b>${esc(formatDuration(totalMinutes))}</b>
   ${note ? `<br>Times shown in ${esc(note)}` : ''}
 </div>
-${days.length === 0 ? '<div class="empty">No completed shifts in this period.</div>' : `
+${rows.length === 0 ? '<div class="empty">No completed shifts in this period.</div>' : `
 <table>
   <thead><tr>
-    <th>Date</th><th>Day</th><th>First in</th><th>Last out</th>
-    <th class="num">Sessions</th><th class="num">Hours</th>
+    <th>Date</th><th>Day</th><th>Clock in</th><th>Clock out</th>
+    <th class="num">Hours</th>
     ${report.hasRemarks ? '<th>Remarks</th>' : ''}
   </tr></thead>
   <tbody>
-    ${days.map((d) => `<tr>
-      <td>${esc(d.date)}</td><td>${esc(d.day)}</td><td>${esc(d.in)}</td><td>${esc(d.out)}</td>
-      <td class="num">${esc(d.sessions)}</td><td class="num">${esc(d.hours)}</td>
-      ${report.hasRemarks ? `<td class="remark">${esc(d.remark)}</td>` : ''}
+    ${rows.map((r, i) => `<tr${i > 0 && r.key === rows[i - 1].key ? ' class="same-day"' : ''}>
+      <td>${esc(r.date)}</td><td>${esc(r.day)}</td><td>${esc(r.in)}</td><td>${esc(r.out)}</td>
+      <td class="num">${esc(r.hours)}</td>
+      ${report.hasRemarks ? `<td class="remark">${esc(r.remark)}</td>` : ''}
     </tr>`).join('')}
   </tbody>
   <tfoot><tr>
-    <td colspan="5">Total</td><td class="num">${esc(formatDuration(totalMinutes))}</td>
+    <td colspan="4">Total</td><td class="num">${esc(formatDuration(totalMinutes))}</td>
     ${report.hasRemarks ? '<td></td>' : ''}
   </tr></tfoot>
 </table>`}
