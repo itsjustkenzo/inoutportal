@@ -84,6 +84,9 @@ export async function fetchDailyReport(person, range) {
       date: formatDate(e.in, zone),
       day: formatDay(e.in, zone),
       in: formatClock(e.in, zone),
+      // Its own date, not the shift's: a shift starting 23:55 clocks out on the
+      // following day, and without this the report gives no sign of it.
+      dateOut: e.out ? formatDate(e.out, zone) : '—',
       out: e.out ? formatClock(e.out, zone) : '—',
       // A shift still open has no duration yet; 0m would read as "worked none".
       hours: e.out ? formatDuration(e.minutes || 0) : '—',
@@ -118,16 +121,18 @@ const clockNote = (person, report) =>
 
 export function downloadDailyCsv(person, range, report) {
   // No Sessions column: every row is one shift, so it would read 1 throughout.
-  const rows = report.rows.map((r) => [r.date, r.day, r.in, r.out, r.hours, r.minutes, r.remark]);
+  const rows = report.rows.map((r) => [
+    r.date, r.day, r.in, r.dateOut, r.out, r.hours, r.minutes, r.remark,
+  ]);
   rows.push([]);
-  rows.push(['Total', '', '', '', formatDuration(report.totalMinutes), report.totalMinutes, '']);
+  rows.push(['Total', '', '', '', '', formatDuration(report.totalMinutes), report.totalMinutes, '']);
 
   const note = clockNote(person, report);
   if (note) rows.push(['Times shown in', note]);
 
   downloadCsv(
     `${person.username}-${slug(range.label)}.csv`,
-    ['Date', 'Day', 'Clock in', 'Clock out', 'Hours', 'Minutes', 'Remarks'],
+    ['Clock-in date', 'Day', 'Clock-in time', 'Clock-out date', 'Clock-out time', 'Hours', 'Minutes', 'Remarks'],
     rows
   );
 }
@@ -166,7 +171,20 @@ export function openDailyPdf(person, range, report) {
   td.remark { color: #334155; font-style: italic; max-width: 260px; }
   /* A day's later shifts read as belonging to the row above. */
   tr.same-day td { border-top: none; }
-  tr.same-day td:first-child, tr.same-day td:nth-child(2) { color: #94a3b8; }
+  tr.same-day td:first-child, tr.same-day td:nth-child(2) { color: #4a5568; }
+  /* A clock-out on a different day than the clock-in. */
+  td.overnight { color: #1d4ed8; font-weight: 600; }
+
+  /*
+   * Alternating rows. print-color-adjust is what keeps them: browsers drop
+   * background colour when printing unless a page asks for it explicitly, so
+   * without this the stripes appear on screen and vanish in the PDF.
+   */
+  tbody tr:nth-child(even) { background: #e9f2fb; }
+  tbody tr, tbody td, tfoot td {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .empty { padding: 30px; text-align: center; color: #64748b; }
   .note { margin-top: 14px; font-size: 11px; color: #64748b; }
   @page { margin: 14mm; }
@@ -183,19 +201,22 @@ export function openDailyPdf(person, range, report) {
 ${rows.length === 0 ? '<div class="empty">No completed shifts in this period.</div>' : `
 <table>
   <thead><tr>
-    <th>Date</th><th>Day</th><th>Clock in</th><th>Clock out</th>
+    <th>Clock-in date</th><th>Day</th><th>Clock-in time</th>
+    <th>Clock-out date</th><th>Clock-out time</th>
     <th class="num">Hours</th>
     ${report.hasRemarks ? '<th>Remarks</th>' : ''}
   </tr></thead>
   <tbody>
     ${rows.map((r, i) => `<tr${i > 0 && r.key === rows[i - 1].key ? ' class="same-day"' : ''}>
-      <td>${esc(r.date)}</td><td>${esc(r.day)}</td><td>${esc(r.in)}</td><td>${esc(r.out)}</td>
+      <td>${esc(r.date)}</td><td>${esc(r.day)}</td><td>${esc(r.in)}</td>
+      <td${r.dateOut !== r.date ? ' class="overnight"' : ''}>${esc(r.dateOut)}</td>
+      <td>${esc(r.out)}</td>
       <td class="num">${esc(r.hours)}</td>
       ${report.hasRemarks ? `<td class="remark">${esc(r.remark)}</td>` : ''}
     </tr>`).join('')}
   </tbody>
   <tfoot><tr>
-    <td colspan="4">Total</td><td class="num">${esc(formatDuration(totalMinutes))}</td>
+    <td colspan="5">Total</td><td class="num">${esc(formatDuration(totalMinutes))}</td>
     ${report.hasRemarks ? '<td></td>' : ''}
   </tr></tfoot>
 </table>`}
