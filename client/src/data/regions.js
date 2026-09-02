@@ -45,7 +45,13 @@ const GROUPS = [
     ['Liechtenstein', 'Europe/Vaduz'],
   ]],
   ['Americas', [
-    ['USA', 'America/New_York'], ['Canada', 'America/Toronto'], ['Mexico', 'America/Mexico_City'],
+    // The United States is listed by time zone rather than as one country: a
+    // shift at 09:00 Eastern is 06:00 Pacific, and one entry could only ever be
+    // right for some of the people using it.
+    ['USA — Eastern', 'America/New_York'], ['USA — Central', 'America/Chicago'],
+    ['USA — Mountain', 'America/Denver'], ['USA — Pacific', 'America/Los_Angeles'],
+    ['USA — Alaska', 'America/Anchorage'], ['USA — Hawaii', 'Pacific/Honolulu'],
+    ['Canada', 'America/Toronto'], ['Mexico', 'America/Mexico_City'],
     ['Brazil', 'America/Sao_Paulo'], ['Argentina', 'America/Argentina/Buenos_Aires'],
     ['Chile', 'America/Santiago'], ['Colombia', 'America/Bogota'], ['Venezuela', 'America/Caracas'],
     ['Peru', 'America/Lima'], ['Ecuador', 'America/Guayaquil'], ['Bolivia', 'America/La_Paz'],
@@ -98,6 +104,9 @@ export const REGION_ZONES = {
   'East Asia': 'Asia/Tokyo',
   'South Asia': 'Asia/Colombo',
   'North America': 'America/New_York',
+  // Accounts saved before the split. They keep working; the picker no longer
+  // offers the bare country, so reassigning one lands it on a real zone.
+  USA: 'America/New_York',
   Oceania: 'Australia/Sydney',
   Europe: 'Europe/Berlin',
   Global: 'UTC',
