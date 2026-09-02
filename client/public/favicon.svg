@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <title>IN/OUT Portal</title>
+  <title>InOut</title>
   <!--
     Drawn rather than traced so it stays sharp at 16px, where a scaled-down
     bitmap turns to mush. Transparent behind the strokes: a white plate would
