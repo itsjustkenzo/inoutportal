@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>IN/OUT Portal</title>
+  <!--
+    Drawn rather than traced so it stays sharp at 16px, where a scaled-down
+    bitmap turns to mush. Transparent behind the strokes: a white plate would
+    read as a sticker on a dark tab bar, and this blue holds up on both
+    (4.8:1 on white, 3.4:1 on a dark chrome).
+  -->
+  <g fill="none" stroke="#1668f5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="16" cy="16" r="10" stroke-width="2.6" />
+    <!-- Hour hand at twelve, minute hand at about four, as in the original. -->
+    <path d="M16 16V9" stroke-width="2.9" />
+    <path d="m16 16 4.4 3.6" stroke-width="2.9" />
+  </g>
+</svg>
