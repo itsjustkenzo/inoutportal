@@ -66,6 +66,19 @@ const CATEGORIES = [
 
 const LOG_PAGE_SIZE = 8;
 
+/**
+ * Time windows for the trail. Anchored to the reader's own midnight, so "today"
+ * means their today — the console is used from several regions.
+ */
+const LOG_WHEN = [
+  ['all', 'Any time'],
+  ['today', 'Today'],
+  ['24h', 'Last 24 hours'],
+  ['7d', 'Last 7 days'],
+  ['30d', 'Last 30 days'],
+  ['custom', 'Custom range'],
+];
+
 /** Time Records sort options, in the order they appear in the dropdown. */
 const RECORD_SORTS = [
   ['name-asc', 'Name A–Z'],
@@ -211,6 +224,9 @@ export default function ServerManager() {
   const [logCategory, setLogCategory] = useState('all');
   const [logRole, setLogRole] = useState('all');
   const [logQuery, setLogQuery] = useState('');
+  const [logWhen, setLogWhen] = useState('all');
+  const [logFrom, setLogFrom] = useState('');
+  const [logTo, setLogTo] = useState('');
 
   // --- database import ---
   const [preview, setPreview] = useState(null);
@@ -248,6 +264,36 @@ export default function ServerManager() {
     load();
   }, [load]);
 
+  /*
+   * The chosen window as two instants. Sent as ISO rather than as dates so the
+   * server filters on the same moments the reader is thinking in, whatever zone
+   * either of them is in. An open end stays undefined rather than "now", so a
+   * change landing while you read it still appears.
+   */
+  const logWindow = useMemo(() => {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const daysBack = (n) => new Date(midnight.getTime() - n * 86400000);
+
+    if (logWhen === 'today') return { from: midnight, to: null };
+    if (logWhen === '24h') return { from: new Date(now.getTime() - 86400000), to: null };
+    if (logWhen === '7d') return { from: daysBack(6), to: null };
+    if (logWhen === '30d') return { from: daysBack(29), to: null };
+    if (logWhen === 'custom') {
+      return {
+        // The "to" date is inclusive: picking the 5th should include the 5th.
+        from: logFrom ? new Date(`${logFrom}T00:00:00`) : null,
+        to: logTo ? new Date(`${logTo}T23:59:59.999`) : null,
+      };
+    }
+    return { from: null, to: null };
+  }, [logWhen, logFrom, logTo]);
+
+  // Compared as strings, so the loader is not re-created on every render by two
+  // freshly built Date objects that happen to mean the same instant.
+  const logFromIso = logWindow.from ? logWindow.from.toISOString() : undefined;
+  const logToIso = logWindow.to ? logWindow.to.toISOString() : undefined;
+
   const loadLog = useCallback(async () => {
     try {
       const { data } = await api.get('/audit', {
@@ -255,6 +301,8 @@ export default function ServerManager() {
           category: logCategory,
           targetRole: logRole,
           q: logQuery.trim() || undefined,
+          from: logFromIso,
+          to: logToIso,
           page: logPage,
           limit: LOG_PAGE_SIZE,
         },
@@ -263,7 +311,7 @@ export default function ServerManager() {
     } catch (err) {
       setMessage({ type: 'error', text: errorMessage(err, 'Could not load the activity log') });
     }
-  }, [logCategory, logRole, logQuery, logPage]);
+  }, [logCategory, logRole, logQuery, logFromIso, logToIso, logPage]);
 
   // Reloaded whenever the console is showing it, so a change made on another
   // tab is already in the trail when you come back to it.
@@ -614,7 +662,8 @@ export default function ServerManager() {
   const pageOf = (list, p) => list.slice((p - 1) * PAGE_SIZE, p * PAGE_SIZE);
   const pagesOf = (list) => Math.max(1, Math.ceil(list.length / PAGE_SIZE));
 
-  const logFiltered = logCategory !== 'all' || logRole !== 'all' || logQuery.trim() !== '';
+  const logFiltered =
+    logCategory !== 'all' || logRole !== 'all' || logQuery.trim() !== '' || logWhen !== 'all';
 
   return (
     <DashLayout
@@ -666,6 +715,9 @@ export default function ServerManager() {
                   setLogCategory('all');
                   setLogRole('all');
                   setLogQuery('');
+                  setLogWhen('all');
+                  setLogFrom('');
+                  setLogTo('');
                   setLogPage(1);
                 }}
                 disabled={!logFiltered}
@@ -706,6 +758,39 @@ export default function ServerManager() {
             </div>
 
             <div className="toolbar-right">
+              <div className="select-wrap">
+                <select
+                  className="form-select"
+                  value={logWhen}
+                  onChange={(e) => { setLogWhen(e.target.value); setLogPage(1); }}
+                  aria-label="Filter by when it happened"
+                >
+                  {LOG_WHEN.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+                <span className="select-chevron">{ICONS.chevron}</span>
+              </div>
+
+              {logWhen === 'custom' && (
+                <div className="period-group">
+                  <span className="picker-label">From</span>
+                  <input
+                    type="date"
+                    value={logFrom}
+                    max={logTo || undefined}
+                    onChange={(e) => { setLogFrom(e.target.value); setLogPage(1); }}
+                    aria-label="From date"
+                  />
+                  <span className="picker-label">To</span>
+                  <input
+                    type="date"
+                    value={logTo}
+                    min={logFrom || undefined}
+                    onChange={(e) => { setLogTo(e.target.value); setLogPage(1); }}
+                    aria-label="To date"
+                  />
+                </div>
+              )}
+
               <div className="select-wrap">
                 <select
                   className="form-select"
