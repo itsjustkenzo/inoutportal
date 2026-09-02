@@ -3,6 +3,7 @@ import api, { errorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLive, useLiveEvent } from '../context/LiveContext.jsx';
 import DashLayout from '../components/DashLayout.jsx';
+import { useConfirm } from '../components/ConfirmDialog.jsx';
 import Pager from '../components/Pager.jsx';
 import FillerRows, { fillerCount } from '../components/FillerRows.jsx';
 import RegionSelect from '../components/RegionSelect.jsx';
@@ -214,6 +215,8 @@ function toLocalInput(value) {
 export default function ServerManager() {
   const { user: me } = useAuth();
   const { status: liveStatus } = useLive();
+
+  const [confirm, confirmDialog] = useConfirm();
 
   const [tab, setTab] = useState('log');
   const [users, setUsers] = useState([]);
@@ -449,9 +452,11 @@ export default function ServerManager() {
   }
 
   async function removeAccount(u) {
-    const ok = window.confirm(
-      `Delete ${u.name} (@${u.username})?\n\nThis also removes their attendance records. It cannot be undone.`
-    );
+    const ok = await confirm({
+      title: `Delete ${u.name}?`,
+      body: `@${u.username}'s account and every attendance record against it will be removed. This cannot be undone.`,
+      confirmLabel: 'Delete account',
+    });
     if (!ok) return;
 
     setMessage(null);
@@ -502,7 +507,12 @@ export default function ServerManager() {
   }
 
   async function removeEntry(entry) {
-    if (!window.confirm('Delete this attendance record? It cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Delete this record?',
+      body: `${formatDateTime(entry.in)} — ${entry.out ? formatDateTime(entry.out) : 'still open'}. This cannot be undone.`,
+      confirmLabel: 'Delete record',
+    });
+    if (!ok) return;
 
     setMessage(null);
     try {
@@ -519,12 +529,11 @@ export default function ServerManager() {
     if (!ids.length) return;
 
     const whose = openPerson?.user?.name || 'this account';
-    const ok = window.confirm(
-      `Delete ${ids.length} attendance record${ids.length === 1 ? '' : 's'} for ${whose}` +
-        `${recordRange.from ? ` in ${recordRange.label}` : ''}?
-
-This cannot be undone.`
-    );
+    const ok = await confirm({
+      title: `Delete ${ids.length} record${ids.length === 1 ? '' : 's'}?`,
+      body: `For ${whose}${recordRange.from ? ` in ${recordRange.label}` : ''}. This cannot be undone.`,
+      confirmLabel: `Delete ${ids.length} record${ids.length === 1 ? '' : 's'}`,
+    });
     if (!ok) return;
 
     setMessage(null);
@@ -652,10 +661,13 @@ This cannot be undone.`
 
     const replacing = selected.filter((j) => j.mode === 'replace');
     if (replacing.length) {
-      const ok = window.confirm(
-        `Replace mode deletes every existing document in: ${replacing.map((j) => j.target).join(', ')}.\n\n` +
-        'This cannot be undone. Continue?'
-      );
+      const ok = await confirm({
+        title: 'Replace these collections?',
+        body:
+          `Every existing document in ${replacing.map((j) => j.target).join(', ')} is deleted first, ` +
+          'then the imported rows are written. This cannot be undone.',
+        confirmLabel: 'Replace and import',
+      });
       if (!ok) return;
     }
 
@@ -2143,6 +2155,7 @@ This cannot be undone.`
           )}
         </>
       )}
+      {confirmDialog}
     </DashLayout>
   );
 }

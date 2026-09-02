@@ -1695,6 +1695,104 @@ a.sort-select:hover { border-color: var(--blue); color: var(--blue-deep); }
 
 .table-select-chevron svg { width: 12px; height: 12px; stroke: var(--text-muted); }
 
+/* --- Confirmation before anything destructive --- */
+
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6, 14, 24, 0.62);
+  backdrop-filter: blur(2px);
+  animation: confirm-fade 0.12s ease-out;
+}
+
+.confirm-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 24px 60px rgba(6, 14, 24, 0.45);
+  animation: confirm-rise 0.14s ease-out;
+}
+
+.confirm-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--blue-tint);
+  color: var(--blue-deep);
+  margin-bottom: 14px;
+}
+
+.confirm-icon.danger { background: rgba(224, 71, 95, 0.14); color: var(--red, #e0475f); }
+.confirm-icon svg { width: 21px; height: 21px; stroke: currentColor; fill: none; }
+
+.confirm-title { font-size: 16px; font-weight: 700; color: var(--dash-text); }
+
+.confirm-body {
+  margin-top: 7px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  /* Messages name what is being removed, sometimes over two sentences. */
+  white-space: pre-line;
+}
+
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+.confirm-cancel,
+.confirm-go {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.confirm-cancel {
+  border: 1px solid var(--hairline);
+  background: var(--panel-alt);
+  color: var(--dash-text);
+}
+
+.confirm-cancel:hover { border-color: var(--blue); }
+
+.confirm-go {
+  border: 1px solid var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.confirm-go.danger { border-color: var(--red, #e0475f); background: var(--red, #e0475f); }
+
+.confirm-go:hover { filter: brightness(1.08); }
+
+/* Visible focus matters more than usual here: the ring is what shows which
+   button Enter would press. */
+.confirm-cancel:focus-visible,
+.confirm-go:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+@keyframes confirm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes confirm-rise {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-backdrop, .confirm-card { animation: none; }
+}
+
 /* --- Time Records: the people list, and ticking rows to delete --- */
 
 /* A whole row opens that person's records. */

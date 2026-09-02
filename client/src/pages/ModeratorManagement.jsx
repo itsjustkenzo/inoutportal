@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import api, { errorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import DashLayout from '../components/DashLayout.jsx';
+import { useConfirm } from '../components/ConfirmDialog.jsx';
 import Pager from '../components/Pager.jsx';
 import FillerRows, { fillerCount } from '../components/FillerRows.jsx';
 import RegionSelect from '../components/RegionSelect.jsx';
@@ -58,6 +59,8 @@ function makePassword(length = 10) {
 
 export default function ModeratorManagement() {
   const { user: me } = useAuth();
+
+  const [confirm, confirmDialog] = useConfirm();
 
   const [tab, setTab] = useState('add');
   const [mods, setMods] = useState([]);
@@ -143,9 +146,11 @@ export default function ModeratorManagement() {
 
   async function removeMod(mod) {
     // Deleting takes their attendance history with it, so confirm first.
-    const ok = window.confirm(
-      `Delete ${mod.name} (@${mod.username})?\n\nThis also removes their attendance records. It cannot be undone.`
-    );
+    const ok = await confirm({
+      title: `Delete ${mod.name}?`,
+      body: `@${mod.username}'s account and every attendance record against it will be removed. This cannot be undone.`,
+      confirmLabel: 'Delete account',
+    });
     if (!ok) return;
 
     setMessage(null);
@@ -512,6 +517,7 @@ export default function ModeratorManagement() {
           <Pager page={settingsPage} pages={pagesOf(settingsRows)} total={settingsRows.length} pageSize={PAGE_SIZE} onChange={setSettingsPage} />
         </>
       )}
+      {confirmDialog}
     </DashLayout>
   );
 }

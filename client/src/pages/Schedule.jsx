@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api, { errorMessage } from '../api/client.js';
 import DashLayout from '../components/DashLayout.jsx';
+import { useConfirm } from '../components/ConfirmDialog.jsx';
 import Pager from '../components/Pager.jsx';
 import FillerRows, { fillerCount } from '../components/FillerRows.jsx';
 import { formatDuration } from '../utils/time.js';
@@ -80,6 +81,8 @@ function shiftTone(start) {
 }
 
 export default function Schedule() {
+  const [confirm, confirmDialog] = useConfirm();
+
   const [mods, setMods] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [message, setMessage] = useState(null);
@@ -145,7 +148,12 @@ export default function Schedule() {
   }
 
   async function removeSchedule(row) {
-    if (!window.confirm(`Remove ${row.name}'s shift?`)) return;
+    const ok = await confirm({
+      title: `Remove ${row.name}'s shift?`,
+      body: 'They will no longer be rostered, so the attendance board stops expecting them.',
+      confirmLabel: 'Remove shift',
+    });
+    if (!ok) return;
     setMessage(null);
     try {
       await api.delete(`/schedules/${row.userId}`);
@@ -442,6 +450,7 @@ export default function Schedule() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </DashLayout>
   );
 }

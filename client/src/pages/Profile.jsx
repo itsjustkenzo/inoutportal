@@ -3,6 +3,7 @@ import api, { errorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { usePrefs, ACCENTS, DEFAULT_DIM } from '../context/PrefsContext.jsx';
 import DashLayout from '../components/DashLayout.jsx';
+import { useConfirm } from '../components/ConfirmDialog.jsx';
 import AvatarCropper from '../components/AvatarCropper.jsx';
 import RegionSelect from '../components/RegionSelect.jsx';
 import { DEFAULT_REGION } from '../data/regions.js';
@@ -21,6 +22,8 @@ const formatSize = (bytes) =>
   bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.round(bytes / 1024)}KB`;
 
 export default function Profile() {
+  const [confirm, confirmDialog] = useConfirm();
+
   const { user, setUser, isAudit } = useAuth();
   const { avatar, setAvatar, wallpaper, setWallpaper, accent, setAccent, dim, setDim } = usePrefs();
 
@@ -104,6 +107,15 @@ export default function Profile() {
   }
 
   async function clearImage(apply, label) {
+    // This had no confirmation at all before, and the image is gone for good —
+    // nothing keeps a copy once the server has dropped it.
+    const ok = await confirm({
+      title: `Remove your ${label.toLowerCase()}?`,
+      body: 'It is deleted from your account. You would need the original file to put it back.',
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
+
     try {
       setWorking(`Removing ${label.toLowerCase()}…`);
       await apply(null);
@@ -374,6 +386,7 @@ export default function Profile() {
           </div>
         </div>
       </div>
+      {confirmDialog}
     </DashLayout>
   );
 }
