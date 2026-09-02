@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { isValidObjectId } from 'mongoose';
 import Entry from '../models/Entry.js';
 import User from '../models/User.js';
 import Schedule from '../models/Schedule.js';
@@ -415,6 +415,48 @@ export const updateEntry = asyncHandler(async (req, res) => {
   }
 
   res.json({ entry });
+});
+
+/**
+ * Server manager: delete several records in one go.
+ *
+ * One request and one line in the trail rather than thirty of each — clearing a
+ * month of mistaken imports through the single-delete endpoint would bury every
+ * other change under its own noise.
+ */
+export const bulkDeleteEntries = asyncHandler(async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : null;
+  if (!ids || ids.length === 0) {
+    return res.status(400).json({ message: 'ids must be a non-empty array' });
+  }
+  if (ids.length > 500) {
+    return res.status(400).json({ message: 'Delete at most 500 records at a time' });
+  }
+  if (!ids.every((id) => isValidObjectId(id))) {
+    return res.status(400).json({ message: 'ids must all be record ids' });
+  }
+
+  // Read first, so the trail can name whose records went and the caller can be
+  // told when some of the ids matched nothing.
+  const found = await Entry.find({ _id: { $in: ids } }).populate('user', 'name username role').lean();
+  if (found.length === 0) return res.status(404).json({ message: 'No matching records' });
+
+  const { deletedCount } = await Entry.deleteMany({ _id: { $in: found.map((e) => e._id) } });
+
+  const owners = [...new Set(found.map((e) => e.user?.name).filter(Boolean))];
+  const whose = owners.length === 1 ? owners[0] : `${owners.length} accounts`;
+
+  await record(req, {
+    category: 'attendance',
+    action: 'entry.bulk_delete',
+    targetType: 'entry',
+    target: found[0]._id,
+    targetName: owners.length === 1 ? owners[0] : 'Several accounts',
+    targetRole: owners.length === 1 ? found[0].user?.role || '' : '',
+    summary: `deleted ${deletedCount} attendance record${deletedCount === 1 ? '' : 's'} for ${whose}`,
+  });
+
+  res.json({ deleted: deletedCount, missing: ids.length - found.length });
 });
 
 export const deleteEntry = asyncHandler(async (req, res) => {

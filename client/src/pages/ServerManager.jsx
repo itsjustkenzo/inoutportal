@@ -79,6 +79,19 @@ const LOG_WHEN = [
   ['custom', 'Custom range'],
 ];
 
+/** Period filters on one person's records. */
+const RECORD_PERIODS = [
+  ['all', 'All time'],
+  ['daily', 'Daily'],
+  ['monthly', 'Monthly'],
+  ['yearly', 'Yearly'],
+];
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 /** Time Records sort options, in the order they appear in the dropdown. */
 const RECORD_SORTS = [
   ['name-asc', 'Name A–Z'],
@@ -247,6 +260,16 @@ export default function ServerManager() {
   const [entryQuery, setEntryQuery] = useState('');
   const [entrySort, setEntrySort] = useState('name-asc');
   const [draft, setDraft] = useState({});
+  // Which account's records are open. Null shows the list of people instead.
+  const [recordUser, setRecordUser] = useState(null);
+  const [recordPeriod, setRecordPeriod] = useState('all');
+  const [recordSel, setRecordSel] = useState(() => {
+    const d = new Date();
+    return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, month: d.getMonth(), year: d.getFullYear() };
+  });
+  // Ids ticked for deletion, as a Set so toggling one row is cheap.
+  const [picked, setPicked] = useState(() => new Set());
+
   // `subject` is only the account a new record is being written for.
   const [subject, setSubject] = useState('');
   const [newEntry, setNewEntry] = useState({ in: '', out: '', note: '' });
@@ -491,6 +514,37 @@ export default function ServerManager() {
     }
   }
 
+  async function removeSelected() {
+    const ids = [...picked];
+    if (!ids.length) return;
+
+    const whose = openPerson?.user?.name || 'this account';
+    const ok = window.confirm(
+      `Delete ${ids.length} attendance record${ids.length === 1 ? '' : 's'} for ${whose}` +
+        `${recordRange.from ? ` in ${recordRange.label}` : ''}?
+
+This cannot be undone.`
+    );
+    if (!ok) return;
+
+    setMessage(null);
+    setBusy(true);
+    try {
+      const { data } = await api.post('/entries/bulk-delete', { ids });
+      const gone = new Set(ids);
+      setEntries((prev) => prev.filter((x) => !gone.has(x._id)));
+      setPicked(new Set());
+      setMessage({
+        type: 'success',
+        text: `Deleted ${data.deleted} record${data.deleted === 1 ? '' : 's'}.`,
+      });
+    } catch (err) {
+      setMessage({ type: 'error', text: errorMessage(err, 'Could not delete those records') });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addEntry(e) {
     e.preventDefault();
     setMessage(null);
@@ -636,28 +690,107 @@ export default function ServerManager() {
     );
   }, [users, query, roleFilter]);
 
-  const visibleEntries = useMemo(() => {
+  /*
+   * The people the records belong to, with a line each. This is the first thing
+   * the tab shows: 2000 rows across everybody is a haystack, and the question
+   * being asked is almost always about one person.
+   */
+  const recordPeople = useMemo(() => {
+    const byUser = new Map();
+    for (const e of entries) {
+      if (!e.user) continue;
+      const id = String(e.user._id);
+      if (!byUser.has(id)) byUser.set(id, { id, user: e.user, count: 0, minutes: 0, open: 0, last: null });
+      const p = byUser.get(id);
+      p.count += 1;
+      p.minutes += e.minutes || 0;
+      if (!e.out) p.open += 1;
+      if (!p.last || new Date(e.in) > new Date(p.last)) p.last = e.in;
+    }
+
     const q = entryQuery.trim().toLowerCase();
     const list = q
-      ? entries.filter(
-          (e) => e.user?.name?.toLowerCase().includes(q) || e.user?.username?.includes(q)
+      ? [...byUser.values()].filter(
+          (p) => p.user.name.toLowerCase().includes(q) || p.user.username.includes(q)
         )
-      : entries;
+      : [...byUser.values()];
 
-    // An open session has no duration yet, so it sorts as zero rather than
-    // jumping to the top of "highest hours".
-    const mins = (e) => e.minutes ?? 0;
-    const name = (e) => e.user?.name || '';
-
-    return [...list].sort((a, b) => {
+    return list.sort((a, b) => {
       switch (entrySort) {
-        case 'name-desc': return name(b).localeCompare(name(a));
-        case 'hours-desc': return mins(b) - mins(a);
-        case 'hours-asc': return mins(a) - mins(b);
-        default: return name(a).localeCompare(name(b));
+        case 'name-desc': return b.user.name.localeCompare(a.user.name);
+        case 'hours-desc': return b.minutes - a.minutes;
+        case 'hours-asc': return a.minutes - b.minutes;
+        default: return a.user.name.localeCompare(b.user.name);
       }
     });
   }, [entries, entryQuery, entrySort]);
+
+  /** Years that actually have records, so the picker offers nothing empty. */
+  const recordYears = useMemo(() => {
+    const years = new Set(entries.map((e) => new Date(e.in).getFullYear()));
+    years.add(new Date().getFullYear());
+    return [...years].sort((a, b) => b - a);
+  }, [entries]);
+
+  /** The chosen period as bounds, in the manager's own clock. */
+  const recordRange = useMemo(() => {
+    const { date, month, year } = recordSel;
+    const endOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+    if (recordPeriod === 'daily') {
+      const day = new Date(`${date}T00:00:00`);
+      return { from: day, to: endOf(day), label: date };
+    }
+    if (recordPeriod === 'monthly') {
+      return {
+        from: new Date(year, month, 1),
+        to: endOf(new Date(year, month + 1, 0)),
+        label: `${MONTH_NAMES[month]} ${year}`,
+      };
+    }
+    if (recordPeriod === 'yearly') {
+      return { from: new Date(year, 0, 1), to: endOf(new Date(year, 11, 31)), label: String(year) };
+    }
+    return { from: null, to: null, label: 'all time' };
+  }, [recordPeriod, recordSel]);
+
+  /** One person's records inside that period, newest first. */
+  const personEntries = useMemo(() => {
+    if (!recordUser) return [];
+    const { from, to } = recordRange;
+    return entries
+      .filter((e) => String(e.user?._id) === recordUser)
+      .filter((e) => {
+        if (!from && !to) return true;
+        const at = new Date(e.in);
+        return (!from || at >= from) && (!to || at <= to);
+      })
+      .sort((a, b) => new Date(b.in) - new Date(a.in));
+  }, [entries, recordUser, recordRange]);
+
+  const openPerson = recordPeople.find((p) => p.id === recordUser)
+    || (recordUser ? { user: entries.find((e) => String(e.user?._id) === recordUser)?.user } : null);
+
+  // A different person or period is a different set of rows, so a tick made
+  // against the old view must not survive into the new one.
+  useEffect(() => {
+    setPicked(new Set());
+    setEntryPage(1);
+  }, [recordUser, recordPeriod, recordSel]);
+
+  const togglePick = (id) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  // Every row the filter is showing, not just the page — "select all" while
+  // looking at a month should mean the month.
+  const allPicked = personEntries.length > 0 && personEntries.every((e) => picked.has(e._id));
+  const toggleAll = () =>
+    setPicked(allPicked ? new Set() : new Set(personEntries.map((e) => e._id)));
+
 
   const pageOf = (list, p) => list.slice((p - 1) * PAGE_SIZE, p * PAGE_SIZE);
   const pagesOf = (list) => Math.max(1, Math.ceil(list.length / PAGE_SIZE));
@@ -1699,146 +1832,315 @@ export default function ServerManager() {
 
           <div className="section-head schedule-head">
             <div>
-              <div className="panel-title">All Attendance Records</div>
+              <div className="panel-title">
+                {recordUser ? `${openPerson?.user?.name || 'Account'} — Records` : 'All Attendance Records'}
+              </div>
               <div className="panel-sub">
-                {visibleEntries.length === entries.length
-                  ? `${entries.length} record${entries.length === 1 ? '' : 's'} across every account`
-                  : `${visibleEntries.length} of ${entries.length} records`}
+                {recordUser
+                  ? `${personEntries.length} record${personEntries.length === 1 ? '' : 's'} in ${recordRange.label}`
+                  : `${recordPeople.length} account${recordPeople.length === 1 ? '' : 's'} with records — open one to see its shifts`}
               </div>
             </div>
+            {recordUser && (
+              <button className="sort-select" type="button" onClick={() => setRecordUser(null)}>
+                &lsaquo; All accounts
+              </button>
+            )}
           </div>
 
           <div className="toolbar">
             <div className="toolbar-left">
-              <label className="search-box">
-                {ICONS.search}
-                <input
-                  type="search"
-                  value={entryQuery}
-                  onChange={(e) => { setEntryQuery(e.target.value); setEntryPage(1); }}
-                  placeholder="Search by name"
-                  aria-label="Search records by name"
-                />
-              </label>
+              {!recordUser && (
+                <label className="search-box">
+                  {ICONS.search}
+                  <input
+                    type="search"
+                    value={entryQuery}
+                    onChange={(e) => { setEntryQuery(e.target.value); setEntryPage(1); }}
+                    placeholder="Search by name"
+                    aria-label="Search records by name"
+                  />
+                </label>
+              )}
+
+              {recordUser && (
+                <>
+                  <div className="segmented" role="tablist" aria-label="Period">
+                    {RECORD_PERIODS.map(([id, label]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        aria-selected={recordPeriod === id}
+                        className={recordPeriod === id ? 'active' : ''}
+                        onClick={() => setRecordPeriod(id)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="period-picker">
+                    {recordPeriod === 'daily' && (
+                      <div className="period-group">
+                        <span className="picker-label">Date</span>
+                        <input
+                          type="date"
+                          value={recordSel.date}
+                          onChange={(e) => setRecordSel({ ...recordSel, date: e.target.value })}
+                          aria-label="Date"
+                        />
+                      </div>
+                    )}
+                    {recordPeriod === 'monthly' && (
+                      <div className="period-group">
+                        <span className="picker-label">Month</span>
+                        <select
+                          value={recordSel.month}
+                          onChange={(e) => setRecordSel({ ...recordSel, month: Number(e.target.value) })}
+                          aria-label="Month"
+                        >
+                          {MONTH_NAMES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                        </select>
+                        <span className="picker-label">Year</span>
+                        <select
+                          value={recordSel.year}
+                          onChange={(e) => setRecordSel({ ...recordSel, year: Number(e.target.value) })}
+                          aria-label="Year"
+                        >
+                          {recordYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {recordPeriod === 'yearly' && (
+                      <div className="period-group">
+                        <span className="picker-label">Year</span>
+                        <select
+                          value={recordSel.year}
+                          onChange={(e) => setRecordSel({ ...recordSel, year: Number(e.target.value) })}
+                          aria-label="Year"
+                        >
+                          {recordYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="toolbar-right">
-              <div className="select-wrap">
-                <select
-                  className="form-select"
-                  value={entrySort}
-                  onChange={(e) => { setEntrySort(e.target.value); setEntryPage(1); }}
-                  aria-label="Sort records"
+              {recordUser ? (
+                <button
+                  className="bulk-delete-btn"
+                  type="button"
+                  onClick={removeSelected}
+                  disabled={picked.size === 0 || busy}
+                  title={picked.size ? `Delete ${picked.size} selected` : 'Tick records to delete'}
                 >
-                  {RECORD_SORTS.map(([id, label]) => (
-                    <option key={id} value={id}>Sort: {label}</option>
-                  ))}
-                </select>
-                <span className="select-chevron">{ICONS.chevron}</span>
-              </div>
+                  {ICONS.trash}
+                  {picked.size ? `Delete ${picked.size} selected` : 'Delete selected'}
+                </button>
+              ) : (
+                <div className="select-wrap">
+                  <select
+                    className="form-select"
+                    value={entrySort}
+                    onChange={(e) => { setEntrySort(e.target.value); setEntryPage(1); }}
+                    aria-label="Sort records"
+                  >
+                    {RECORD_SORTS.map(([id, label]) => (
+                      <option key={id} value={id}>Sort: {label}</option>
+                    ))}
+                  </select>
+                  <span className="select-chevron">{ICONS.chevron}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="activity-scroll">
-            <table className="activity-table attendance-table row-controls">
-              <thead>
-                <tr>
-                  <th>Account</th>
-                  <th>Clock in</th>
-                  <th>Clock out</th>
-                  <th>Total</th>
-                  <th>Note</th>
-                  <th className="num">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleEntries.length === 0 && (
-                  <tr><td colSpan={6} className="activity-empty">
-                    {entries.length ? 'No records match.' : 'No attendance records yet.'}
-                  </td></tr>
-                )}
-                {pageOf(visibleEntries, entryPage).map((entry) => {
-                  const dirty = Boolean(draft[entry._id]);
-                  return (
-                    <tr key={entry._id}>
-                      <td>
-                        <div className="mod-cell">
-                          <UserAvatar
-                            userId={entry.user._id}
-                            name={entry.user.name}
-                            className="mod-avatar is-completed"
-                          />
-                          <div>
-                            <div className="mod-name">{entry.user.name}</div>
-                            <div className="mod-role">@{entry.user.username}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <input
-                          className="table-input"
-                          type="datetime-local"
-                          value={editValue(entry, 'in')}
-                          onChange={(e) => setEdit(entry._id, 'in', e.target.value)}
-                          aria-label="Clock in"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="table-input"
-                          type="datetime-local"
-                          value={editValue(entry, 'out')}
-                          onChange={(e) => setEdit(entry._id, 'out', e.target.value)}
-                          aria-label="Clock out"
-                        />
-                      </td>
-                      <td className="mono strong">
-                        {entry.out ? formatDuration(entry.minutes) : <span className="muted-italic">Open</span>}
-                      </td>
-                      <td className="mono">{entry.note || '——'}</td>
-                      <td className="status-col-cell">
-                        <div className="actions-cell">
-                          <button
-                            type="button"
-                            className="icon-action-btn save"
-                            onClick={() => saveEntry(entry)}
-                            disabled={!dirty}
-                            title={dirty ? 'Save changes' : 'No changes'}
-                            aria-label="Save changes"
-                          >
-                            {ICONS.save}
-                          </button>
-                          <button
-                            type="button"
-                            className="icon-action-btn delete"
-                            onClick={() => removeEntry(entry)}
-                            title="Delete record"
-                            aria-label="Delete record"
-                          >
-                            {ICONS.trash}
-                          </button>
-                        </div>
-                      </td>
+          {!recordUser && (
+            <>
+              <div className="activity-scroll">
+                <table className="activity-table attendance-table">
+                  <thead>
+                    <tr>
+                      <th>Account</th>
+                      <th>Records</th>
+                      <th>Total hours</th>
+                      <th>Latest</th>
+                      <th className="num">&nbsp;</th>
                     </tr>
-                  );
-                })}
+                  </thead>
+                  <tbody>
+                    {recordPeople.length === 0 && (
+                      <tr><td colSpan={5} className="activity-empty">
+                        {entries.length ? 'No accounts match.' : 'No attendance records yet.'}
+                      </td></tr>
+                    )}
+                    {pageOf(recordPeople, entryPage).map((p) => (
+                      <tr
+                        key={p.id}
+                        className="row-clickable"
+                        onClick={() => setRecordUser(p.id)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Open the records for ${p.user.name}`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setRecordUser(p.id);
+                          }
+                        }}
+                      >
+                        <td>
+                          <div className="mod-cell">
+                            <UserAvatar userId={p.user._id} name={p.user.name} className="mod-avatar is-completed" />
+                            <div>
+                              <div className="mod-name">{p.user.name}</div>
+                              <div className="mod-role">@{p.user.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="mono">
+                          {p.count}
+                          {p.open ? <span className="muted-italic"> ({p.open} open)</span> : ''}
+                        </td>
+                        <td className="mono strong">{formatDuration(p.minutes)}</td>
+                        <td className="mono">{p.last ? formatDate(p.last) : '——'}</td>
+                        <td className="status-col-cell mono">&rsaquo;</td>
+                      </tr>
+                    ))}
 
-                <FillerRows
-                  count={fillerCount(PAGE_SIZE, pageOf(visibleEntries, entryPage).length)}
-                  colSpan={6}
-                  tall
-                />
-              </tbody>
-            </table>
-          </div>
+                    <FillerRows
+                      count={fillerCount(PAGE_SIZE, pageOf(recordPeople, entryPage).length)}
+                      colSpan={5}
+                      tall
+                    />
+                  </tbody>
+                </table>
+              </div>
 
-          <Pager
-            page={entryPage}
-            pages={pagesOf(visibleEntries)}
-            total={visibleEntries.length}
-            pageSize={PAGE_SIZE}
-            onChange={setEntryPage}
-          />
+              <Pager
+                page={entryPage}
+                pages={pagesOf(recordPeople)}
+                total={recordPeople.length}
+                pageSize={PAGE_SIZE}
+                onChange={setEntryPage}
+              />
+            </>
+          )}
+
+          {recordUser && (
+            <>
+              <div className="activity-scroll">
+                <table className="activity-table attendance-table row-controls">
+                  <thead>
+                    <tr>
+                      <th className="tick-col">
+                        <input
+                          type="checkbox"
+                          checked={allPicked}
+                          /* Some-but-not-all shows as indeterminate rather than
+                             claiming everything is selected. */
+                          ref={(el) => { if (el) el.indeterminate = picked.size > 0 && !allPicked; }}
+                          onChange={toggleAll}
+                          disabled={personEntries.length === 0}
+                          aria-label="Select every record shown"
+                        />
+                      </th>
+                      <th>Clock in</th>
+                      <th>Clock out</th>
+                      <th>Total</th>
+                      <th>Note</th>
+                      <th className="num">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {personEntries.length === 0 && (
+                      <tr><td colSpan={6} className="activity-empty">
+                        No records in {recordRange.label}.
+                      </td></tr>
+                    )}
+                    {pageOf(personEntries, entryPage).map((entry) => {
+                      const dirty = Boolean(draft[entry._id]);
+                      return (
+                        <tr key={entry._id} className={picked.has(entry._id) ? 'row-picked' : ''}>
+                          <td className="tick-col">
+                            <input
+                              type="checkbox"
+                              checked={picked.has(entry._id)}
+                              onChange={() => togglePick(entry._id)}
+                              aria-label={`Select the record starting ${formatDateTime(entry.in)}`}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="table-input"
+                              type="datetime-local"
+                              value={editValue(entry, 'in')}
+                              onChange={(e) => setEdit(entry._id, 'in', e.target.value)}
+                              aria-label="Clock in"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="table-input"
+                              type="datetime-local"
+                              value={editValue(entry, 'out')}
+                              onChange={(e) => setEdit(entry._id, 'out', e.target.value)}
+                              aria-label="Clock out"
+                            />
+                          </td>
+                          <td className="mono strong">
+                            {entry.out ? formatDuration(entry.minutes) : <span className="muted-italic">Open</span>}
+                          </td>
+                          <td className="mono">{entry.note || '——'}</td>
+                          <td className="status-col-cell">
+                            <div className="actions-cell">
+                              <button
+                                type="button"
+                                className="icon-action-btn save"
+                                onClick={() => saveEntry(entry)}
+                                disabled={!dirty}
+                                title={dirty ? 'Save changes' : 'No changes'}
+                                aria-label="Save changes"
+                              >
+                                {ICONS.save}
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-action-btn delete"
+                                onClick={() => removeEntry(entry)}
+                                title="Delete record"
+                                aria-label="Delete record"
+                              >
+                                {ICONS.trash}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    <FillerRows
+                      count={fillerCount(PAGE_SIZE, pageOf(personEntries, entryPage).length)}
+                      colSpan={6}
+                      tall
+                    />
+                  </tbody>
+                </table>
+              </div>
+
+              <Pager
+                page={entryPage}
+                pages={pagesOf(personEntries)}
+                total={personEntries.length}
+                pageSize={PAGE_SIZE}
+                onChange={setEntryPage}
+              />
+            </>
+          )}
         </>
       )}
     </DashLayout>

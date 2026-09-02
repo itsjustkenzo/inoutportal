@@ -11,6 +11,7 @@ import {
   createEntry,
   updateEntry,
   deleteEntry,
+  bulkDeleteEntries,
 } from '../controllers/entry.controller.js';
 import { requireAuth, requireAdmin, requireRole, requireManager } from '../middleware/auth.js';
 
@@ -32,6 +33,8 @@ router.get('/summary', requireRole('admin', 'audit', 'manager'), summary);
 router.get('/all', requireManager, listAllEntries);
 router.post('/', requireManager, createEntry);
 router.patch('/:id', requireManager, updateEntry);
+// Above /:id so "bulk-delete" is never taken for a record id.
+router.post('/bulk-delete', requireManager, bulkDeleteEntries);
 router.delete('/:id', requireManager, deleteEntry);
 
 export default router;

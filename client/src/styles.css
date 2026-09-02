@@ -1695,6 +1695,49 @@ a.sort-select:hover { border-color: var(--blue); color: var(--blue-deep); }
 
 .table-select-chevron svg { width: 12px; height: 12px; stroke: var(--text-muted); }
 
+/* --- Time Records: the people list, and ticking rows to delete --- */
+
+/* A whole row opens that person's records. */
+.row-clickable { cursor: pointer; transition: background 0.15s; }
+.row-clickable:hover { background: var(--panel-alt); }
+.row-clickable:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+
+.tick-col { width: 40px; text-align: center; }
+
+.tick-col input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+/* Ticked rows are tinted so a selection spanning a page is obvious. */
+.row-picked { background: var(--blue-tint); }
+
+.bulk-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--red, #e0475f);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--red, #e0475f);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.bulk-delete-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+
+.bulk-delete-btn:hover:not(:disabled) { background: var(--red, #e0475f); color: #fff; }
+
+/* Nothing ticked reads as inert rather than broken. */
+.bulk-delete-btn:disabled { opacity: 0.4; cursor: default; }
+
 .password-dots { font-family: 'IBM Plex Mono', monospace; font-size: 14px; letter-spacing: 2px; color: var(--text-muted); }
 
 /* --- Setting a password by hand, beside the random-reset lock --- */
